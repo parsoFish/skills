@@ -1,0 +1,12 @@
+{
+  "include": "^(src|apps|packages|lib)",
+  "roots": ["."],
+  "tsConfig": false,
+  "rules": [
+    { "match": "^apps/([^/]+)/", "component": "$1" },
+    { "match": "^packages/([^/]+)/", "component": "$1" },
+    { "match": "^src/([^/]+)/", "component": "$1" },
+    { "match": "^lib/([^/]+)/", "component": "$1" },
+    { "match": "^src/[^/]+$", "component": "root" }
+  ]
+}

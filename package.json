@@ -1,0 +1,16 @@
+{
+  "name": "@parsofish/skills",
+  "version": "0.1.0",
+  "description": "Personal collection of Claude Code skills, packaged as a plugin marketplace",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "lint": "node scripts/lint-skills.mjs",
+    "test": "node --test \"tests/**/*.test.mjs\" \"skills/*/scripts/**/*.test.mjs\"",
+    "validate": "claude plugin validate . --strict",
+    "eval": "claude plugin eval . --trust-plugin --json evals/results.json --threshold 0.8 --max-cost-usd 10 --no-publish",
+    "check": "npm run lint && npm test && npm run validate"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,8 @@
+{
+  "name": "parso-skills",
+  "version": "0.1.0",
+  "description": "David Parsonson's personal skills: architecture (design + current-state docs kit), more to come",
+  "author": { "name": "David Parsonson" },
+  "license": "MIT",
+  "repository": "https://github.com/parsoFish/skills"
+}

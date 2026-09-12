@@ -1,0 +1,34 @@
+name: skills-ci
+on:
+  workflow_dispatch:
+  push: { branches: [main] }
+  pull_request:
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm run lint
+      - run: npm test
+      - name: Validate plugin + skills (strict)
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          claude plugin validate . --strict
+  evals:
+    # costs money: runs only when a PR carries the `evals` label or on manual dispatch
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'evals')
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install -g @anthropic-ai/claude-code
+      - name: Run skill evals with a hard cost ceiling
+        env: { ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }} }
+        run: claude plugin eval . --trust-plugin --json evals/results.json --threshold 0.8 --max-cost-usd 10 --no-publish
+      - uses: actions/upload-artifact@v4
+        with: { name: eval-results, path: evals/results.json }
+# workflow_dispatch lets you run evals by hand from the Actions tab

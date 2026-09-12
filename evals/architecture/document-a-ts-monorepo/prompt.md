@@ -1,0 +1,1 @@
+Document the architecture of this repository: I want a current-state picture of the components and how they depend on each other, the risks, and a list of anything you could not determine from the code. Put the output under docs/.

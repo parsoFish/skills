@@ -1,0 +1,31 @@
+// House legend: element kinds with fixed colours and shapes. Copy into docs/architecture/model/spec.c4 unchanged.
+specification {
+  color kHuman #6B4E9B
+  color kUi #1F6F78
+  color kSvc #2F5FA8
+  color kCli #4A5468
+  color kAgent #C2571A
+  color kKnow #3F7D3A
+  color kLog #8A6D1F
+  color kWs #8C5A2B
+  color kExt #7C869A
+  color kModel #A03A6E
+  color kIac #8A6D1F
+  element system
+  element human     { style { shape person; color kHuman } }
+  element webui     { style { shape browser; color kUi } }
+  element service   { style { shape rectangle; color kSvc } }
+  element cli       { style { shape rectangle; color kCli } }
+  element agent     { style { shape rectangle; color kAgent } }
+  element knowledge { style { shape cylinder; color kKnow } }
+  element log       { style { shape storage; color kLog } }
+  element workspace { style { shape rectangle; color kWs } }
+  element external  { style { shape rectangle; color kExt; border dashed } }
+  element modelapi  { style { shape rectangle; color kModel; border dashed } }
+  element iacmodule { style { shape rectangle; color kIac } }
+  relationship imports
+  relationship minor
+  relationship runtime
+  tag generated
+  tag hand
+}
