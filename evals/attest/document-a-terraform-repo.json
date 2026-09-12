@@ -1,0 +1,182 @@
+{
+ "schemaVersion": 1,
+ "claudeVersion": "2.1.269",
+ "startedAt": "2026-09-12T14:38:28.714Z",
+ "durationSeconds": 578,
+ "costUsd": 1.5072136000000003,
+ "partial": false,
+ "suite": {
+  "ablation": "with-without",
+  "modelOverride": "claude-sonnet-5",
+  "judgeModel": "claude-haiku-4-5",
+  "caseFilter": "document-a-terraform-repo",
+  "threshold": 0.8,
+  "concurrency": 1,
+  "plugins": 1
+ },
+ "cases": [
+  {
+   "name": "document-a-terraform-repo",
+   "dir": "evals/architecture/document-a-terraform-repo",
+   "source": "mixed",
+   "promptMarkdown": "Document the architecture of this repository: I want a current-state picture of the Terraform modules and how they call each other, the providers in use, the resource inventory, and a list of anything you could not determine from the code. Put the output under docs/. Do not invent anything the repository does not show.",
+   "runsPerCase": 1,
+   "timeoutSeconds": 1500,
+   "maxTurns": 90,
+   "graders": [
+    {
+     "name": "infra-generated",
+     "type": "file_exists",
+     "weight": 1,
+     "config": {
+      "path": "docs/reference/infra.md",
+      "exists": true
+     }
+    },
+    {
+     "name": "module-names-recorded",
+     "type": "regex",
+     "weight": 1,
+     "config": {
+      "target": {
+       "source": "file",
+       "path": "docs/reference/infra.md"
+      },
+      "pattern": "network[\\s\\S]*app|app[\\s\\S]*network",
+      "flags": "",
+      "match": "contains"
+     }
+    },
+    {
+     "name": "overview-not-invented",
+     "type": "llm",
+     "weight": 1,
+     "graderMarkdown": "This overview was written by the skill for a Terraform repository with exactly two modules (network, app) called from the root, one provider (aws), and three resources (aws_vpc.main, aws_instance.web, aws_instance.worker) — no other services, databases, compute platforms, or external systems of any kind. Score 1 if every structural claim is one of those facts or is explicitly marked GAP or as a question, and no raw .tf, .c4, or JSON content is pasted in as the deliverable. Score 0 if it asserts modules, providers, resources, services, or deployment targets the repository does not show.",
+     "config": {
+      "criteria": "This overview was written by the skill for a Terraform repository with exactly two modules (network, app) called from the root, one provider (aws), and three resources (aws_vpc.main, aws_instance.web, aws_instance.worker) — no other services, databases, compute platforms, or external systems of any kind. Score 1 if every structural claim is one of those facts or is explicitly marked GAP or as a question, and no raw .tf, .c4, or JSON content is pasted in as the deliverable. Score 0 if it asserts modules, providers, resources, services, or deployment targets the repository does not show.",
+      "focus": {
+       "source": "file",
+       "path": "docs/architecture/overview.md"
+      }
+     }
+    },
+    {
+     "name": "skill-fired",
+     "type": "tool_used",
+     "weight": 1,
+     "config": {
+      "tool": "Skill"
+     }
+    }
+   ],
+   "arms": {
+    "with": [
+     {
+      "score": 1,
+      "passed": true,
+      "turns": 64,
+      "costUsd": 1.3787374000000003,
+      "judgeCostUsd": 0.0034860000000000004,
+      "durationSeconds": 536,
+      "startedAt": "2026-09-12T14:38:28.762Z",
+      "error": null,
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "infra-generated",
+        "passed": true,
+        "weight": 1,
+        "explanation": "docs/reference/infra.md exists as expected",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "module-names-recorded",
+        "passed": true,
+        "weight": 1,
+        "explanation": "matched network[\\s\\S]*app|app[\\s\\S]*network",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "overview-not-invented",
+        "passed": true,
+        "weight": 1,
+        "explanation": "judge votes: PASS PASS PASS",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         true,
+         true,
+         true
+        ],
+        "evidence": "source: b7cb418\n\n# Overview\n\n## What this is\nA three-file Terraform configuration: a root module (`main.tf`) that declares one provider and calls two child modules, `modules/app` and `modules/network`. Neither child module takes input variables, produces outputs, or calls another module.\n\n## Context\n- A human operator is the only actor evidenced; there is no CI/CD config in the repo (no `.github/workflows`; `reference/delivery.md` found none), so `terraform plan`/`apply` is presumed run by hand. GAP: the actual apply process (local CLI, wrapper script, or an external CI system not in this repo) is not recorded here.\n- The only declared target is AWS, region `us-east-1` (main.tf:11), via `hashicorp/aws ~> 5.0` (main.tf:2-6).\n- No `backend` block is declared, so Terraform state defaults to a local `terraform.tfstate` file in whatever workspace runs `apply`; there is no remote backend or state locking.\n- No `.terraform.lock.hcl` is committed, so the resolved provider version is not pinned in the repo.\n\n## Module graph\n```mermaid\nflowchart LR\n  root[\"root — main.tf\"] --> app[\"module.app — ./modules/app\"]\n  root --> network[\"module.network — ./modules/network\"]\n```\n| module | source | called from | resources |\n| --- | --- | --- | --- |\n| root | (this repo) | — | none directly |\n| app | ./modules/app | main.tf:18-20 | 2 `aws_instance` |\n| network | ./modules/network | main.tf:14-16 | 1 `aws_vpc` |\n\nFull generated tables (providers, resources, module edges): `reference/infra.md`.\n\n`modules/app` and `modules/network` do not reference each other and share no visible wiring (e.g. no subnet/VPC id passed from network to app) — each is a flat, self-contained resource block with no `variable`, `output`, `data`, or `locals`.\n\n## Rendered views\nRendered C4 context/container/component views could not be produced: LikeC4 (`likec4@1.59.3`) is fetched via `npx` from the npm registry, and outbound network access to `registry.npmjs.org` was denied in this environment (see `docs/architecture/_run/kit-issues.md`). The module graph above and `reference/infra.md` are the accurate substitute for this run.\n\n## Unknowns (GAP)\nEverything below is absent from the checked-in code, not inferred:\n- **Apply/deploy process** — no CI workflow, Makefile, or script invokes `terraform`; how and by whom `apply` is run is unknown.\n- **AWS credentials** — the `provider \"aws\"` block sets only `region`; no `access_key`, `profile`, or `assume_role` is present, so how the operator authenticates to AWS is unknown. See `secrets.md`.\n- **State backend intent** — no `backend` block; whether local state is intentional or an oversight is unknown.\n- **Environments/workspaces** — no `variable` blocks, `.tfvars` files, or Terraform workspaces exist, so there is no visible way to target more than one AWS account/region.\n- **AMI validity** — both `aws_instance` resources use `ami-123456` (modules/app/main.tf:2,7), which is not a well-formed AWS AMI id (too short); whether this is a placeholder is unknown.\n- **Decision history** — no `docs/decisions/` ADRs exist; see `docs/decisions/README.md`.\n- Additional open questions are tracked in `_run/interview.md` after stage 2.\n"
+       },
+       {
+        "name": "skill-fired",
+        "passed": true,
+        "weight": 1,
+        "explanation": "Skill called 1x (expected 1..∞)",
+        "withOnly": true,
+        "scored": false
+       }
+      ]
+     }
+    ],
+    "without": [
+     {
+      "score": 0,
+      "passed": false,
+      "turns": 9,
+      "costUsd": 0.12847619999999998,
+      "judgeCostUsd": 0,
+      "durationSeconds": 42,
+      "startedAt": "2026-09-12T14:47:24.489Z",
+      "error": null,
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "infra-generated",
+        "passed": false,
+        "weight": 1,
+        "explanation": "docs/reference/infra.md missing (expected present)",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "module-names-recorded",
+        "passed": false,
+        "weight": 1,
+        "explanation": "grader threw: case \"document-a-terraform-repo\" grader focus file \"docs/reference/infra.md\": path \"docs/reference/infra.md\" does not exist",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "overview-not-invented",
+        "passed": false,
+        "weight": 1,
+        "explanation": "grader threw: case \"document-a-terraform-repo\" grader focus file \"docs/architecture/overview.md\": path \"docs/architecture/overview.md\" does not exist",
+        "withOnly": false,
+        "scored": true
+       }
+      ]
+     }
+    ]
+   },
+   "aggregates": {
+    "score": 1,
+    "passRate": 1,
+    "scoreWithout": 0,
+    "passRateWithout": 0,
+    "delta": 1
+   }
+  }
+ ],
+ "aggregates": {
+  "casesTotal": 1,
+  "casesPassed": 1,
+  "overallScore": 1,
+  "overallPassRate": 1,
+  "meanDelta": 1
+ }
+}

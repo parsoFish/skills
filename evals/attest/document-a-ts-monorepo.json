@@ -1,0 +1,217 @@
+{
+ "schemaVersion": 1,
+ "claudeVersion": "2.1.269",
+ "startedAt": "2026-09-12T14:48:13.083Z",
+ "durationSeconds": 925,
+ "costUsd": 2.9341821999999995,
+ "partial": false,
+ "suite": {
+  "ablation": "with-without",
+  "modelOverride": "claude-sonnet-5",
+  "judgeModel": "claude-haiku-4-5",
+  "caseFilter": "document-a-ts-monorepo",
+  "threshold": 0.8,
+  "concurrency": 1,
+  "plugins": 1
+ },
+ "cases": [
+  {
+   "name": "document-a-ts-monorepo",
+   "dir": "evals/architecture/document-a-ts-monorepo",
+   "source": "mixed",
+   "promptMarkdown": "Document the architecture of this repository: I want a current-state picture of the components and how they depend on each other, the dependencies and why they exist, the delivery pipeline, the risks, and a list of anything you could not determine from the code. Put the output under docs/. Do not invent anything the repository does not show.",
+   "runsPerCase": 1,
+   "timeoutSeconds": 1500,
+   "maxTurns": 90,
+   "graders": [
+    {
+     "name": "components-generated",
+     "type": "file_exists",
+     "weight": 1,
+     "config": {
+      "path": "docs/reference/components.md",
+      "exists": true
+     }
+    },
+    {
+     "name": "cycle-detected",
+     "type": "regex",
+     "weight": 1,
+     "config": {
+      "target": {
+       "source": "file",
+       "path": "docs/reference/components.md"
+      },
+      "pattern": "core.*web|web.*core",
+      "flags": "",
+      "match": "contains"
+     }
+    },
+    {
+     "name": "deps-ledger-truth",
+     "type": "llm",
+     "weight": 1,
+     "graderMarkdown": "This is the generated dependency ledger. The repository declares exactly two direct dependencies: express (imported by src/cli/main.js) and leftpad (imported by nothing). Score 1 if the table lists exactly those two, marks leftpad as unused, and shows an import site for express. Score 0 if it lists other dependencies, misses leftpad's unused flag, or the file is missing.",
+     "config": {
+      "criteria": "This is the generated dependency ledger. The repository declares exactly two direct dependencies: express (imported by src/cli/main.js) and leftpad (imported by nothing). Score 1 if the table lists exactly those two, marks leftpad as unused, and shows an import site for express. Score 0 if it lists other dependencies, misses leftpad's unused flag, or the file is missing.",
+      "focus": {
+       "source": "file",
+       "path": "docs/reference/deps.md"
+      }
+     }
+    },
+    {
+     "name": "overview-not-invented",
+     "type": "llm",
+     "weight": 1,
+     "graderMarkdown": "This overview was written by the skill for a repository with exactly three components (cli, core, web), one CI job named test, one env var ACME_API_TOKEN, and no deployment target, database, or external service of any kind. Score 1 if every structural claim is one of those facts or is explicitly marked GAP or as a question, and no raw .c4 or JSON content is pasted in as the deliverable. Score 0 if it asserts components, services, databases, deployment targets, decisions, or integrations the repository does not show.",
+     "config": {
+      "criteria": "This overview was written by the skill for a repository with exactly three components (cli, core, web), one CI job named test, one env var ACME_API_TOKEN, and no deployment target, database, or external service of any kind. Score 1 if every structural claim is one of those facts or is explicitly marked GAP or as a question, and no raw .c4 or JSON content is pasted in as the deliverable. Score 0 if it asserts components, services, databases, deployment targets, decisions, or integrations the repository does not show.",
+      "focus": {
+       "source": "file",
+       "path": "docs/architecture/overview.md"
+      }
+     }
+    },
+    {
+     "name": "skill-fired",
+     "type": "tool_used",
+     "weight": 1,
+     "config": {
+      "tool": "Skill"
+     }
+    }
+   ],
+   "arms": {
+    "with": [
+     {
+      "score": 1,
+      "passed": true,
+      "turns": 118,
+      "costUsd": 2.7150487999999995,
+      "judgeCostUsd": 0.003486,
+      "durationSeconds": 829,
+      "startedAt": "2026-09-12T14:48:13.119Z",
+      "error": null,
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "components-generated",
+        "passed": true,
+        "weight": 1,
+        "explanation": "docs/reference/components.md exists as expected",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "cycle-detected",
+        "passed": true,
+        "weight": 1,
+        "explanation": "matched core.*web|web.*core",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "deps-ledger-truth",
+        "passed": true,
+        "weight": 1,
+        "explanation": "judge votes: PASS PASS PASS",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         true,
+         true,
+         true
+        ],
+        "evidence": "generated by arch extract deps — do not hand-edit\nsource: a25469f\n\n# Dependencies\n\nOne row per direct runtime dependency; unused deps sort first.\n\n| name | version | usedBy | why | unused |\n| --- | --- | --- | --- | --- |\n| leftpad | ^1.3.0 | acme-tool |  | yes |\n| express | ^4.19.0 | acme-tool | imported by src/cli/main.js |  |\n\nlockfile: none\n"
+       },
+       {
+        "name": "overview-not-invented",
+        "passed": true,
+        "weight": 1,
+        "explanation": "judge votes: PASS PASS PASS",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         true,
+         true,
+         true
+        ],
+        "evidence": "# Overview\n\n`acme-tool` is a small Node.js ESM package (`package.json:1`) with one declared entry\npoint: the `acme` binary bound to `src/cli/main.js:1`. The kit folds the source into\nthree components (rules in `fold-rules.json`, one component per top-level `src/*` dir):\n\n| component | files | role |\n| --- | --- | --- |\n| cli | `src/cli/main.js` | entry point; imports `core` and `web`, then calls both unconditionally |\n| core | `src/core/run.js`, `src/core/back.js` | `run()` returns the constant `1` (`src/core/run.js:1`) |\n| web | `src/web/server.js` | `serve(app)` ignores `app` and calls `core.run()` (`src/web/server.js:1`) |\n\nFull detail: `docs/reference/components.md`.\n\n## What actually happens at runtime\n`src/cli/main.js:1` runs unconditionally on invocation: `run(); serve(express);` — there\nis no argument parsing (no `process.argv` handling, no CLI-arg library) and no branching,\nso every invocation of `acme` takes the same path regardless of arguments.\n`serve(express)` passes the `express` module itself (not an `express()` app instance) into\n`web.serve`, which never calls `.listen()` anywhere in the repo. **No HTTP server is ever\nstarted** — despite the `express` dependency and web-shaped classification signal, `web`\nis inert code that only re-calls `core.run()`.\n\n`src/core/back.js:1` re-exports `web.serve` as `back`; nothing in the repo imports `back`\n(dead code).\n\n## Cycle\n`core` and `web` import each other (1 edge each way, `docs/reference/components.md`):\n`src/core/back.js` → `src/web/server.js` → `src/core/run.js`. Whether to accept this by ADR or split\nthe components is an open decision — see `interview.md` Q2.\n\n## Open classification question\nClassification is ambiguous between `cli` and `service` (evidence: `package.json` `bin`\nfield, and the `express` dependency) — see `interview.md` Q1. Given the above (no server is\never started), the `cli` reading is closer to what the code does today, but this is a human\ncall, not one this review makes unilaterally.\n"
+       },
+       {
+        "name": "skill-fired",
+        "passed": true,
+        "weight": 1,
+        "explanation": "Skill called 1x (expected 1..∞)",
+        "withOnly": true,
+        "scored": false
+       }
+      ]
+     }
+    ],
+    "without": [
+     {
+      "score": 0,
+      "passed": false,
+      "turns": 14,
+      "costUsd": 0.21913340000000003,
+      "judgeCostUsd": 0,
+      "durationSeconds": 97,
+      "startedAt": "2026-09-12T15:02:01.821Z",
+      "error": null,
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "components-generated",
+        "passed": false,
+        "weight": 1,
+        "explanation": "docs/reference/components.md missing (expected present)",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "cycle-detected",
+        "passed": false,
+        "weight": 1,
+        "explanation": "grader threw: case \"document-a-ts-monorepo\" grader focus file \"docs/reference/components.md\": path \"docs/reference/components.md\" does not exist",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "deps-ledger-truth",
+        "passed": false,
+        "weight": 1,
+        "explanation": "grader threw: case \"document-a-ts-monorepo\" grader focus file \"docs/reference/deps.md\": path \"docs/reference/deps.md\" does not exist",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "overview-not-invented",
+        "passed": false,
+        "weight": 1,
+        "explanation": "grader threw: case \"document-a-ts-monorepo\" grader focus file \"docs/architecture/overview.md\": path \"docs/architecture/overview.md\" does not exist",
+        "withOnly": false,
+        "scored": true
+       }
+      ]
+     }
+    ]
+   },
+   "aggregates": {
+    "score": 1,
+    "passRate": 1,
+    "scoreWithout": 0,
+    "passRateWithout": 0,
+    "delta": 1
+   }
+  }
+ ],
+ "aggregates": {
+  "casesTotal": 1,
+  "casesPassed": 1,
+  "overallScore": 1,
+  "overallPassRate": 1,
+  "meanDelta": 1
+ }
+}

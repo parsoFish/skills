@@ -9,9 +9,10 @@ const hooks = join(ROOT, '.git', 'hooks');
 if (!existsSync(join(ROOT, '.git'))) { console.error('not a git checkout'); process.exit(1); }
 mkdirSync(hooks, { recursive: true });
 const hook = `#!/bin/sh
-# skills gate: any added or changed skill must pass deterministic + agentic validation before it leaves this machine.
-# Emergency bypass (a broken eval harness, not a failing skill): SKILLS_GATE_SKIP_AGENTIC=1 git push — the report records the skip.
-exec node scripts/gate.mjs --base "@{upstream}"
+# skills gate: any added or changed skill must have a valid attestation before it leaves this machine.
+# This verifies the existing attestation (deterministic checks + attest verify) — it never spends
+# money or runs the agentic half itself. Run \`npm run gate\` first if this fails.
+exec node scripts/gate.mjs --verify-only --base "@{upstream}"
 `;
 writeFileSync(join(hooks, 'pre-push'), hook); chmodSync(join(hooks, 'pre-push'), 0o755);
-console.log('installed .git/hooks/pre-push → node scripts/gate.mjs');
+console.log('installed .git/hooks/pre-push → node scripts/gate.mjs --verify-only');

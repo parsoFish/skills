@@ -1,0 +1,144 @@
+{
+ "schemaVersion": 1,
+ "claudeVersion": "2.1.269",
+ "startedAt": "2026-09-12T15:03:39.966Z",
+ "durationSeconds": 89,
+ "costUsd": 0.3278516,
+ "partial": false,
+ "suite": {
+  "ablation": "with-without",
+  "modelOverride": "claude-sonnet-5",
+  "judgeModel": "claude-haiku-4-5",
+  "caseFilter": "drift-catches-a-new-edge",
+  "threshold": 0.8,
+  "concurrency": 1,
+  "plugins": 1
+ },
+ "cases": [
+  {
+   "name": "drift-catches-a-new-edge",
+   "dir": "evals/architecture/drift-catches-a-new-edge",
+   "source": "mixed",
+   "promptMarkdown": "Re-run the architecture check and tell me if the architecture drifted.",
+   "runsPerCase": 1,
+   "timeoutSeconds": 1500,
+   "maxTurns": 90,
+   "graders": [
+    {
+     "name": "drift-file-exists",
+     "type": "file_exists",
+     "weight": 1,
+     "config": {
+      "path": "docs/reference/drift.md",
+      "exists": true
+     }
+    },
+    {
+     "name": "drift-mentioned",
+     "type": "regex",
+     "weight": 1,
+     "config": {
+      "target": "last_message",
+      "pattern": "drift|undeclared",
+      "flags": "i",
+      "match": "contains"
+     }
+    },
+    {
+     "name": "skill-fired",
+     "type": "tool_used",
+     "weight": 1,
+     "config": {
+      "tool": "Skill"
+     }
+    }
+   ],
+   "arms": {
+    "with": [
+     {
+      "score": 1,
+      "passed": true,
+      "turns": 14,
+      "costUsd": 0.16239920000000002,
+      "judgeCostUsd": 0,
+      "durationSeconds": 37,
+      "startedAt": "2026-09-12T15:03:39.997Z",
+      "error": null,
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "drift-file-exists",
+        "passed": true,
+        "weight": 1,
+        "explanation": "docs/reference/drift.md exists as expected",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "drift-mentioned",
+        "passed": true,
+        "weight": 1,
+        "explanation": "matched drift|undeclared",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "skill-fired",
+        "passed": true,
+        "weight": 1,
+        "explanation": "Skill called 1x (expected 1..∞)",
+        "withOnly": true,
+        "scored": false
+       }
+      ]
+     }
+    ],
+    "without": [
+     {
+      "score": 0.5,
+      "passed": false,
+      "turns": 14,
+      "costUsd": 0.1654524,
+      "judgeCostUsd": 0,
+      "durationSeconds": 52,
+      "startedAt": "2026-09-12T15:04:17.282Z",
+      "error": null,
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "drift-file-exists",
+        "passed": false,
+        "weight": 1,
+        "explanation": "docs/reference/drift.md missing (expected present)",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "drift-mentioned",
+        "passed": true,
+        "weight": 1,
+        "explanation": "matched drift|undeclared",
+        "withOnly": false,
+        "scored": true
+       }
+      ]
+     }
+    ]
+   },
+   "aggregates": {
+    "score": 1,
+    "passRate": 1,
+    "scoreWithout": 0.5,
+    "passRateWithout": 0,
+    "delta": 0.5
+   }
+  }
+ ],
+ "aggregates": {
+  "casesTotal": 1,
+  "casesPassed": 1,
+  "overallScore": 1,
+  "overallPassRate": 1,
+  "meanDelta": 0.5
+ }
+}
