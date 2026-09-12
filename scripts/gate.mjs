@@ -4,7 +4,8 @@
 //   2 agentic (spends money, bounded): `claude plugin eval` on the changed skills' cases, then a headless structural review with a structured verdict
 // Usage: node scripts/gate.mjs [--base <ref>] [--all] [--no-agentic] [--no-review] [--max-cost-usd 5] [--json <path>]
 import { spawnSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -41,6 +42,18 @@ export function readEvalResult(json, threshold = 0.8) {
   const cases = (json?.cases ?? []).map(c => ({ name: c.name ?? c.id ?? '?', score: c.aggregates?.score ?? c.score ?? null, delta: c.aggregates?.delta ?? c.delta ?? null }));
   const ok = score !== null && score >= threshold;
   return { ok, score, threshold, cases };
+}
+
+/** Pure: content hash of the changed skills (skill dir + its evals), so a passing agentic result can be reused for identical content. */
+export function contentHash(root, skills) {
+  const h = createHash('sha256');
+  const walk = d => { if (!existsSync(d)) return; for (const f of readdirSync(d).sort()) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p); else { h.update(p.slice(root.length)); h.update(readFileSync(p)); } } };
+  for (const s of [...skills].sort()) { walk(join(root, 'skills', s)); walk(join(root, 'evals', s)); }
+  return h.digest('hex');
+}
+
+export function cachedPass(reportPath, hash) {
+  try { const r = JSON.parse(readFileSync(reportPath, 'utf8')); return r.ok === true && r.agenticRan === true && r.contentHash === hash ? r : null; } catch { return null; }
 }
 
 export function locateQuickValidate() {
@@ -85,7 +98,11 @@ function main() {
   if (!report.ok) { console.log('gate: deterministic checks failed; agentic phase skipped'); return finish(report); }
 
   // 2 agentic
+  report.contentHash = contentHash(ROOT, changed);
+  const prior = has('--force') ? null : cachedPass(flag('--json', join(ROOT, 'evals', 'gate-report.json')), report.contentHash);
+  if (prior) { step('agentic phase', true, `cached pass for identical content (score ${prior.eval?.score ?? '?'}); --force to re-run`); report.agenticRan = true; report.eval = prior.eval; report.review = prior.review; report.cached = true; return finish(report); }
   if (has('--no-agentic') || process.env.SKILLS_GATE_SKIP_AGENTIC === '1') { step('agentic phase', true, 'SKIPPED by flag — not acceptable for a merge'); report.agenticSkipped = true; return finish(report); }
+  report.agenticRan = true;
   const cap = flag('--max-cost-usd', '5');
   const jsonPath = join(ROOT, 'evals', 'gate-eval.json');
   const evalModel = flag('--eval-model', 'claude-sonnet-5'); const judge = flag('--judge-model', 'claude-haiku-4-5');

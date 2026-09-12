@@ -15,7 +15,7 @@ scripts/lint-skills.mjs · tests/                repo plumbing
 Every added or changed skill goes through `npm run gate` (installed as a git pre-push hook by `npm install` / `npm run hooks:install`; the same command runs in CI on every PR that touches `skills/` or `evals/`):
 1. deterministic — skills lint (incl. forbidden terms and eval coverage), script tests, `claude plugin validate --strict`, Anthropic's skill-creator `quick_validate.py` on each changed skill;
 2. agentic, bounded by `--max-cost-usd` — `claude plugin eval` on the changed skills' cases (threshold 0.8; read the with/without delta, not the score), then a headless structural review (`claude -p`, read-only tools, structured verdict; any critical or major finding fails).
-`npm run gate:quick` runs only the deterministic half for fast iteration. `SKILLS_GATE_SKIP_AGENTIC=1` is an emergency bypass for a broken harness, never for a failing skill; the report records the skip. The report lands in `evals/gate-report.json`.
+`npm run gate:quick` runs only the deterministic half for fast iteration. `SKILLS_GATE_SKIP_AGENTIC=1` is an emergency bypass for a broken harness, never for a failing skill; the report records the skip. The report lands in `evals/gate-report.json` and records a content hash of the changed skills: an identical, already-passed change is not re-billed on the next push (`--force` re-runs). A skipped agentic phase never counts as a pass.
 
 ## Authoring loop
 1. `/skill-creator` to draft; iterate with-skill vs baseline on 2–3 realistic prompts before committing.

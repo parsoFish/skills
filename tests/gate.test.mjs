@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { changedSkills, evalCoverage, readEvalResult } from '../scripts/gate.mjs';
+import { changedSkills, evalCoverage, readEvalResult, contentHash, cachedPass } from '../scripts/gate.mjs';
 
 test('changedSkills maps skill and eval paths to skill names, deduplicated and sorted', () => {
   assert.deepEqual(changedSkills(['skills/b/SKILL.md', 'evals/a/case/prompt.md', 'skills/b/scripts/x.mjs', 'README.md', 'scripts/gate.mjs']), ['a', 'b']);
@@ -25,4 +25,19 @@ test('readEvalResult applies the threshold and surfaces per-case deltas', () => 
   assert.equal(r.ok, true); assert.deepEqual(r.cases, [{ name: 'c', score: 0.9, delta: 0.4 }]);
   assert.equal(readEvalResult({ aggregates: { overallScore: 0.5 } }).ok, false);
   assert.equal(readEvalResult({}).ok, false, 'no score is a failure, never a pass');
+});
+
+test('contentHash changes with skill content and cachedPass honours ok + agenticRan + hash', () => {
+  const root = mkdtempSync(join(tmpdir(), 'gate-'));
+  mkdirSync(join(root, 'skills', 's'), { recursive: true }); writeFileSync(join(root, 'skills', 's', 'SKILL.md'), 'a');
+  const h1 = contentHash(root, ['s']);
+  writeFileSync(join(root, 'skills', 's', 'SKILL.md'), 'b');
+  const h2 = contentHash(root, ['s']);
+  assert.notEqual(h1, h2);
+  const rp = join(root, 'report.json');
+  writeFileSync(rp, JSON.stringify({ ok: true, agenticRan: true, contentHash: h2, eval: { score: 0.9 } }));
+  assert.equal(cachedPass(rp, h2)?.eval.score, 0.9);
+  assert.equal(cachedPass(rp, h1), null, 'different content is not a cached pass');
+  writeFileSync(rp, JSON.stringify({ ok: true, agenticRan: false, agenticSkipped: true, contentHash: h2 }));
+  assert.equal(cachedPass(rp, h2), null, 'a skipped agentic phase never counts as a pass');
 });
