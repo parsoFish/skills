@@ -47,7 +47,8 @@ function runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEval
         const j = JSON.parse(readFileSync(candidate, 'utf8'));
         if (!canReuseEval(j, lastChangeEpoch(root, c.skill))) continue;
         const ev = readEvalResult(j, config);
-        return { result: { ...c, exit: 0, model: evalModel, judge: judgeModel, jsonPath: candidate, reused: true, ...ev }, harness: harnessProblem(j) };
+        if (harnessProblem(j) || ev.partial) continue; // an interrupted run is not evidence; try the next candidate
+        return { result: { ...c, exit: 0, model: evalModel, judge: judgeModel, jsonPath: candidate, reused: true, ...ev }, harness: '' };
       } catch { /* try the next candidate, then a real run */ }
     }
   }
