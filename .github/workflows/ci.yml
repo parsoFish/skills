@@ -43,7 +43,8 @@ jobs:
         with: { python-version: '3.12' }
       - name: Agentic gate (requires ANTHROPIC_API_KEY)
         if: steps.changed.outputs.skills == 'true'
-        env: { ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }} }
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           test -n "$ANTHROPIC_API_KEY" || { echo "ANTHROPIC_API_KEY secret missing: the agentic gate cannot run and a skill change must not merge without it"; exit 1; }
           sudo apt-get update -qq && sudo apt-get install -y -qq bubblewrap socat   # sandbox backend for Bash-granting evals
