@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { render } from './render.mjs';
+import { render, likec4Available } from './render.mjs';
 
 function dirs() {
   const modelDir = mkdtempSync(join(tmpdir(), 'model-'));
@@ -13,6 +13,7 @@ function dirs() {
 
 function fakeExec(calls, { pilOk = true, exportFiles = ['index.png', 'containers.png'] } = {}) {
   return (cmd, args, opts) => {
+    if (cmd === 'npx' && args.includes('--no-install')) return { status: 0, stdout: '1.59.3', stderr: '' };
     calls.push({ cmd, args, opts });
     if (cmd === 'npx' && args.includes('validate')) return { status: 0, stdout: '', stderr: '' };
     if (cmd === 'npx' && args.includes('export')) {
@@ -46,7 +47,7 @@ test('happy path: validates, exports, postprocesses, and lists sorted png basena
 test('throws with stderr when validate fails, and never calls export', () => {
   const { modelDir, outDir } = dirs();
   const calls = [];
-  const exec = (cmd, args) => { calls.push(cmd); return args.includes('validate') ? { status: 1, stdout: '', stderr: 'bad model' } : { status: 0, stdout: '', stderr: '' }; };
+  const exec = (cmd, args) => { if (!args.includes('--no-install')) calls.push(cmd); return args.includes('validate') ? { status: 1, stdout: '', stderr: 'bad model' } : { status: 0, stdout: '', stderr: '' }; };
   assert.throws(() => render({ modelDir, outDir, exec }), /bad model/);
   assert.deepEqual(calls, ['npx']);
 });
@@ -88,4 +89,13 @@ test('outDir exists after export regardless of postprocess outcome', () => {
   const calls = [];
   render({ modelDir, outDir, exec: fakeExec(calls) });
   assert.ok(existsSync(outDir));
+});
+
+test('render skips with a note when likec4 is not available offline, and never calls export', () => {
+  const calls = [];
+  const exec = (cmd, args) => { calls.push(args.join(' ')); return args.includes('--no-install') ? { status: 1, stdout: '', stderr: 'npm error could not determine executable to run' } : { status: 0, stdout: '', stderr: '' }; };
+  const r = render({ modelDir: '/m', outDir: '/o', exec });
+  assert.deepEqual(r.views, []); assert.equal(r.validated, false); assert.match(r.notes[0], /not available offline/);
+  assert.equal(calls.length, 1);
+  assert.equal(likec4Available(() => ({ status: 0 })), true);
 });

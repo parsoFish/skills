@@ -31,27 +31,39 @@
   {
    "name": "claude plugin eval (architecture)",
    "ok": false,
-   "detail": "exit 1 · score 0 · "
+   "detail": "exit 1 · score 0 · document-a-ts-monorepo 0 Δ0"
   },
   {
    "name": "structural review architecture",
    "ok": true,
-   "detail": "pass: no findings"
+   "detail": "pass: [minor] Stage 2 step 1 says to seed hand.c4 'plus the kind template in assets/', but assets/ contains only fold-rules.json and legend.c4 — no per-kind templates exist. Dangling reference to a resource, not a markdown link."
   }
  ],
  "ok": false,
- "contentHash": "6213124810a2c588bb996dbc274c782d8f9c7c69b814e2fdde7c598cb1a70f64",
+ "contentHash": "89562608cb28679b9c59c0d9b52125150597d8264e2a6e31caee2bf70a619c5c",
  "agenticRan": true,
  "eval": {
   "ok": false,
   "score": 0,
   "threshold": 0.8,
-  "cases": []
+  "cases": [
+   {
+    "name": "document-a-ts-monorepo",
+    "score": 0,
+    "delta": 0
+   }
+  ]
  },
  "review": {
   "architecture": {
    "verdict": "pass",
-   "findings": []
+   "findings": [
+    {
+     "severity": "minor",
+     "file": "skills/architecture/SKILL.md",
+     "finding": "Stage 2 step 1 says to seed hand.c4 'plus the kind template in assets/', but assets/ contains only fold-rules.json and legend.c4 — no per-kind templates exist. Dangling reference to a resource, not a markdown link."
+    }
+   ]
   }
  }
 }
