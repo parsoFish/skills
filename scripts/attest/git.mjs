@@ -33,8 +33,10 @@ export function statusPorcelain(root, pathspecs) {
 
 /** git diff --name-only base...head → changed paths. Throws when the ref cannot be resolved (a
  * missing/misspelled base must surface, not read as "nothing changed"). */
+export const EMPTY_TREE_SHA = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 export function diffNameOnly(root, base, head = 'HEAD') {
-  const r = run(root, ['diff', '--name-only', `${base}...${head}`]);
+  // The empty-tree sentinel is not a commit, so merge-base (three-dot) semantics cannot apply to it.
+  const r = run(root, base === EMPTY_TREE_SHA ? ['diff', '--name-only', base, head] : ['diff', '--name-only', `${base}...${head}`]);
   if (r.status !== 0) throw new Error(`git diff --name-only ${base}...${head} failed: ${(r.stderr || r.stdout).trim()}`);
   return r.stdout.split('\n').filter(Boolean);
 }

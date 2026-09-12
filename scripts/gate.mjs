@@ -72,7 +72,8 @@ async function main() {
 
   let scope;
   if (args.all) scope = { skills: readdirSync(join(ROOT, 'skills')), harness: true };
-  else scope = changedScope(changedPaths(ROOT, resolveBase(args.base, createGit(ROOT))), readdirSync(join(ROOT, 'skills')));
+  const base = resolveBase(args.base, createGit(ROOT)); // resolved once; the raw --base (e.g. @{upstream}) may not exist
+  if (!args.all) scope = changedScope(changedPaths(ROOT, base), readdirSync(join(ROOT, 'skills')));
 
   const envSkip = process.env.SKILLS_GATE_SKIP_AGENTIC === '1';
   const bypassReason = process.env.SKILLS_GATE_BYPASS_REASON || null;
@@ -98,7 +99,7 @@ async function main() {
   const post = postDeterministicRoute({ scope, args, envSkip, bypassReason });
   if (post.kind === 'verify-only') {
     const attest = await importAttest();
-    const v = attest.verify(ROOT, { base: args.base ?? 'origin/main', now: new Date(), config });
+    const v = attest.verify(ROOT, { base, now: new Date(), config });
     return v.ok ? printPass(attest.skillsDigest(ROOT).slice(0, 12)) : printFail(`attest verify: ${v.reasons.join('; ')}`);
   }
   if (post.kind === 'harness-only') return printDeterministicOnly(); // attestation left exactly as it was

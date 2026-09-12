@@ -114,3 +114,10 @@ test('--verify-only never writes evals/gate-report.json: a failing deterministic
   assert.ok(failBlocks.includes('record('), 'deterministic failure path must go through record()');
   assert.ok(!failBlocks.includes('writeReportFile('), 'deterministic failure path must not call writeReportFile directly');
 });
+
+test('the verify-only path hands attest the resolved base, never the raw --base string (a first push has no @{upstream})', () => {
+  const src = readFileSync(new URL('../scripts/gate.mjs', import.meta.url), 'utf8');
+  assert.match(src, /const base = resolveBase\(args\.base, createGit\(ROOT\)\)/);
+  assert.match(src, /attest\.verify\(ROOT, \{ base, /);
+  assert.doesNotMatch(src, /attest\.verify\(ROOT, \{ base: args\.base/);
+});

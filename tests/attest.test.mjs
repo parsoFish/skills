@@ -452,3 +452,10 @@ test('changedSkillNames never reads evals/attest or evals/results as a skill', a
   assert.deepEqual(changedSkillNames(['evals/attest/a.json', 'evals/results/x/report.html'], ['architecture']), []);
   assert.deepEqual(changedSkillNames(['evals/architecture/c/prompt.md', 'evals/attest/a.json'], ['architecture']), ['architecture']);
 });
+
+test('diffNameOnly against the empty-tree sentinel lists every tracked file (two-dot), instead of failing on merge-base', async () => {
+  const { diffNameOnly, EMPTY_TREE_SHA } = await import('../scripts/attest/git.mjs');
+  const g = buildGolden();
+  const all = diffNameOnly(g.root, EMPTY_TREE_SHA, 'HEAD');
+  assert.ok(all.length > 0 && all.includes('.claude-plugin/plugin.json'), `expected tracked files, got ${all.length}`);
+});
