@@ -33,11 +33,17 @@ const cmd = positional[0];
 const sub = cmd === 'extract' ? positional[1] : undefined;
 const root = resolve(positional[cmd === 'extract' ? 2 : 1] ?? '.');
 const docsDir = resolve(flag('--out') ?? join(root, 'docs'));
+// Safety: without --out, arch only writes into a docs tree it manages (marker docs/reference/.arch-managed) or a docs tree that does not exist yet.
+if (!flag('--out') && existsSync(docsDir) && !existsSync(join(docsDir, 'reference', '.arch-managed')) && !['classify', undefined].includes(cmd)) {
+  console.error(`refusing to write into ${docsDir}: it exists but is not managed by arch. Pass --out <dir>, or create ${join(docsDir, 'reference', '.arch-managed')} to adopt it.`);
+  process.exit(3);
+}
 const P = { ref: join(docsDir, 'reference'), arch: join(docsDir, 'architecture'), run: join(docsDir, 'architecture', '_run'), model: join(docsDir, 'architecture', 'model'), views: join(docsDir, 'reference', 'views') };
 const MD_KIND = { 'tests-by-seam': 'tests', 'extension-points': 'ext-points' };
 const FILE_NAME = { tests: 'tests-by-seam', 'ext-points': 'extension-points' };
 
 const write = (p, s) => { mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, s.endsWith('\n') ? s : s + '\n'); };
+const markManaged = () => { const m = join(docsDir, 'reference', '.arch-managed'); if (!existsSync(m)) write(m, 'managed by arch — generated files live here'); };
 const emit = (name, json, command) => { write(join(P.ref, `${name}.json`), JSON.stringify(json, null, 1)); write(join(P.ref, `${name}.md`), toMarkdown(MD_KIND[name] ?? name, json, { command })); };
 
 export function loadRules() {
@@ -75,6 +81,7 @@ function extractorTable(rules) {
 
 function run() {
   const notes = [];
+  markManaged();
   const kinds = classify(root); write(join(P.run, 'classify.json'), JSON.stringify(kinds, null, 1));
   const rules = loadRules();
   const sys = rules.system ?? { id: 'system', title: root.split('/').pop() };
