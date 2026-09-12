@@ -146,6 +146,23 @@ test('seedHandC4 caps the containers view at 8 top components by files', () => {
   assert.ok(line.startsWith('sys.c0'));
 });
 
+test('seedHandC4 prioritises distinct-kind components into the containers top-8 ahead of larger same-kind ones', () => {
+  // 9 plain 'service'-kind components (no heuristic match), each larger than the one webui — a
+  // pure by-files ranking would drop webui; the current selection keeps every distinct kind first.
+  const many = {
+    nodes: [
+      { id: 'webui', files: 1 },
+      ...Array.from({ length: 9 }, (_, i) => ({ id: `svc${i}`, files: 20 - i })),
+    ],
+    edges: [],
+  };
+  const c4 = seedHandC4(many, { systemId: 'sys' });
+  const line = c4.match(/include ((?:sys\.[a-z0-9]+(?:, )?)+)/)[1];
+  const included = line.split(', ');
+  assert.equal(included.length, 8);
+  assert.ok(included.includes('sys.webui'));
+});
+
 test('seedHandC4 emits one view per opts.areas group, skipping empty groups', () => {
   const c4 = seedHandC4(components, { systemId: 'acme', areas: { payments: ['payments'], empty: [], core: ['webui', 'kernel'] } });
   assert.match(c4, /view area_payments of acme \{[\s\S]*title 'payments'[\s\S]*description 'which components make up the payments area'[\s\S]*include acme\.payments/);

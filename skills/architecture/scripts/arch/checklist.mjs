@@ -23,7 +23,7 @@ const RANK = { '✓': 2, opt: 1, '—': 0 };
 const KIND_TABLE = {
   cli: { api: '✓', 'screen-flow': 'opt', credential: 'opt', tests: 'opt', stakeholders: 'opt', risks: 'opt', quality: 'opt' },
   service: {
-    deployment: '✓', scenarios: '✓', catalogue: '✓', api: '✓', credential: '✓', signals: '✓',
+    deployment: '✓', scenarios: '✓', catalogue: 'opt', api: '✓', credential: '✓', signals: '✓',
     tests: '✓', risks: '✓', stakeholders: '✓', 'screen-flow': '✓', quality: '✓',
     'extension-points': 'opt', 'job-dag': 'opt',
   },
@@ -69,7 +69,7 @@ const REASONS = {
 const SHAPES = {
   context: { file: 'reference/views/index.png', needsFence: false, needsTableColumns: [] },
   component: { file: 'reference/components.md', needsFence: false, needsTableColumns: ['component', 'files', 'tests'] },
-  deployment: { file: 'reference/views/deployment.png', needsFence: false, needsTableColumns: [] },
+  deployment: { file: 'architecture/deployment.md', needsFence: true, needsTableColumns: [] },
   scenarios: { file: 'architecture/scenarios/', needsFence: true, needsTableColumns: [] },
   catalogue: { file: 'reference/events/', needsFence: false, needsTableColumns: [] },
   api: { file: 'reference/api.md', needsFence: false, needsTableColumns: [] },
@@ -78,7 +78,7 @@ const SHAPES = {
   risks: { file: 'architecture/risks.md', needsFence: false, needsTableColumns: ['likelihood', 'impact', 'trigger', 'mitigation', 'owner'] },
   'screen-flow': { file: 'architecture/journeys/', needsFence: true, needsTableColumns: [] },
   loop: { file: 'architecture/loop.md', needsFence: true, needsTableColumns: [] },
-  'device-topology': { file: 'reference/views/deployment.png', needsFence: false, needsTableColumns: [] },
+  'device-topology': { file: 'architecture/deployment.md', needsFence: true, needsTableColumns: [] },
   'extension-points': { file: 'reference/extension-points.md', needsFence: false, needsTableColumns: ['name', 'glob', 'count', 'installed'] },
   signals: { file: 'architecture/signals.md', needsFence: true, needsTableColumns: [] },
   pipeline: { file: 'reference/delivery.md', needsFence: false, needsTableColumns: ['file', 'job', 'needs', 'runs-on', 'steps'] },

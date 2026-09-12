@@ -17,9 +17,10 @@ test('every archetype requires the six base views', () => {
 
 test('service adds its named views as required, including screen-flow as a UI kind', () => {
   const rows = requiredViews(['service']);
-  for (const v of ['deployment', 'scenarios', 'catalogue', 'api', 'credential', 'signals', 'tests', 'risks', 'stakeholders', 'screen-flow']) {
+  for (const v of ['deployment', 'scenarios', 'api', 'credential', 'signals', 'tests', 'risks', 'stakeholders', 'screen-flow']) {
     assert.equal(rows.find(r => r.view === v).required, '✓', v);
   }
+  assert.equal(rows.find(r => r.view === 'catalogue').required, 'opt', 'catalogue stays optional until a schema extractor exists');
   assert.equal(rows.find(r => r.view === 'module-graph').required, '—');
 });
 
