@@ -4,7 +4,8 @@
  "attested": true,
  "agenticRan": true,
  "bypass": null,
- "generatedAt": "2026-09-12T17:38:17.267Z",
+ "generatedAt": "2026-09-12T17:52:20.201Z",
+ "commit": "8c85436dfa88fb4972cb3726b1d299c774830cb3",
  "claudeVersion": "2.1.269",
  "pluginVersion": "0.2.0",
  "scope": {
@@ -157,32 +158,30 @@
   "architecture": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.28092079999999997
+   "costUsd": 0.248681
   },
   "eval-authoring": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.0909284
+   "costUsd": 0.1425832
   },
   "skill-dev": {
    "verdict": "pass",
-   "findings": [
-    {
-     "severity": "minor",
-     "finding": "Body prose is discursive/explanatory in places (e.g. rationale clauses like 'because skipping it was tried and found expensive') rather than strictly terse imperative instructions. Headers and key directives are imperative, so this doesn't block firing or comprehension, but it adds token cost beyond what pure step commands would need."
-    },
-    {
-     "severity": "minor",
-     "finding": "The skill has no scripts/, references/, or assets/ subdirectories — it's pure process guidance at 111 lines, well under the 500-line cap, so progressive disclosure isn't exercised. Not a defect (no content currently needs offloading), but worth watching if the body grows."
-    }
-   ],
-   "costUsd": 0.126213
+   "findings": [],
+   "costUsd": 0.09108200000000001
   }
  },
  "totals": {
-  "costUsd": 6.265489599999999,
+  "costUsd": 6.249773599999999,
   "durationSeconds": 2012
  },
  "skillsDigest": "d701aa223cf93ae9602f03d9dc521361f5c46ec8bdb680f753a43d915057892f",
- "harnessDigest": "0baa01a9604f421affdc819db08c02687c77cd5327fa6b65d071f85fd741fefc"
+ "harnessDigest": "83be227e7acfff57cd9509d863f9804c15aee6fcbffa721f5918e43bcac5e398",
+ "reusedEvals": [
+  "document-a-terraform-repo",
+  "document-a-ts-monorepo",
+  "drift-catches-a-new-edge",
+  "writes-a-case-for-changelog-line",
+  "adds-a-csv-to-table-skill"
+ ]
 }

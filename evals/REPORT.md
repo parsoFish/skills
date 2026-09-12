@@ -4,11 +4,11 @@
 | field | value |
 | --- | --- |
 | skillsDigest | `d701aa223cf9` |
-| commit | `—` |
-| generatedAt | 2026-09-12T17:38:17.267Z |
+| commit | `8c85436dfa88fb4972cb3726b1d299c774830cb3` |
+| generatedAt | 2026-09-12T17:52:20.201Z |
 | claudeVersion | 2.1.269 |
 | pluginVersion | 0.2.0 |
-| total cost | $6.27 |
+| total cost | $6.25 |
 | total duration | 33.5 min |
 
 ## Deterministic steps
@@ -94,9 +94,9 @@
 
 | skill | verdict | findings | cost |
 | --- | --- | --- | --- |
-| architecture | pass | none | $0.28 |
-| eval-authoring | pass | none | $0.09 |
-| skill-dev | pass | [minor] Body prose is discursive/explanatory in places (e.g. rationale clauses like 'because skipping it was tried and found expensive') rather than strictly terse imperative instructions. Headers and key directives are imperative, so this doesn't block firing or comprehension, but it adds token cost beyond what pure step commands would need.; [minor] The skill has no scripts/, references/, or assets/ subdirectories — it's pure process guidance at 111 lines, well under the 500-line cap, so progressive disclosure isn't exercised. Not a defect (no content currently needs offloading), but worth watching if the body grows. | $0.13 |
+| architecture | pass | none | $0.25 |
+| eval-authoring | pass | none | $0.14 |
+| skill-dev | pass | none | $0.09 |
 
 ## Re-run
 
