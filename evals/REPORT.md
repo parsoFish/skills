@@ -4,11 +4,11 @@
 | field | value |
 | --- | --- |
 | skillsDigest | `d701aa223cf9` |
-| commit | `3e45e70135f1a92d0441c76c5c7725dd3f5bca6b` |
-| generatedAt | 2026-09-12T18:09:25.228Z |
+| commit | `ecde8606b115bf1fba1c99dab9cf8f26254c993f` |
+| generatedAt | 2026-09-12T18:18:58.672Z |
 | claudeVersion | 2.1.269 |
 | pluginVersion | 0.2.0 |
-| total cost | $6.36 |
+| total cost | $6.20 |
 | total duration | 33.5 min |
 
 ## Deterministic steps
@@ -94,9 +94,9 @@
 
 | skill | verdict | findings | cost |
 | --- | --- | --- | --- |
-| architecture | pass | none | $0.34 |
-| eval-authoring | pass | none | $0.13 |
-| skill-dev | pass | none | $0.12 |
+| architecture | pass | [minor] SKILL.md frontmatter 'description' is one very long, densely packed sentence-pair (~600 chars). It does satisfy the requirements (third-person, names trigger phrases like 'C4 or context diagrams', 'ADR index', 'risk register', 'dependency ledger', quoted user phrasing, and an explicit 'Use when...' clause), but it could be tightened for scanability without losing content.; [minor] Could not execute `node --test scripts/arch/*.test.mjs` in this sandboxed review session (command required approval that was out of scope for a read-only review), so test presence was verified structurally (every non-test .mjs in scripts/arch/ has a matching *.test.mjs) but not confirmed to pass at review time. | $0.22 |
+| eval-authoring | pass | none | $0.12 |
+| skill-dev | pass | [minor] Step 5 hard-references the sibling 'eval-authoring' skill by name ('use the eval-authoring skill for this step'). This works within the parso-skills plugin but weakens portability if skill-dev is extracted standalone (e.g. via `npx skills add --skill skill-dev` into a stranger's repo) — the referenced skill won't exist there and the instruction has no fallback.; [minor] No references/, scripts/, or assets/ subdirectories exist. This is acceptable since skill-dev is a process/workflow skill with no deterministic tooling of its own, but it means the file has no progressive-disclosure split to verify — everything (112 lines) lives in SKILL.md itself, which is fine under the 500-line cap but worth noting since the review asked to check references/ and scripts/ specifically. | $0.10 |
 
 ## Re-run
 
@@ -119,4 +119,5 @@ setsid nohup node scripts/gate.mjs --all --force > /tmp/gate.log 2>&1 &
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 2026-09-12 | 8c85436 | architecture+eval-authoring+skill-dev | 5 cases | $6.25 | 33.5 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |
 | 2026-09-12 | 0c69792 | architecture+eval-authoring+skill-dev | 5 cases | $6.26 | 33.5 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |
+| 2026-09-12 | 3e45e70 | architecture+eval-authoring+skill-dev | 5 cases | $6.36 | 33.5 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |
 ```
