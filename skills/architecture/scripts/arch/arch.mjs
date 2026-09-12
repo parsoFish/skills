@@ -105,7 +105,7 @@ function run() {
     try { const r = render({ modelDir: P.model, outDir: P.views }); views = r.views; notes.push(...r.notes); }
     catch (e) { notes.push(`render failed: ${String(e.message).split('\n')[0]}`); }
   }
-  const completeness = evaluate(docsDir, JSON.parse(readFileSync(join(here, '..', '..', 'references', 'completeness.json'), 'utf8')), { retired: rules.retired ?? [] });
+  const completeness = evaluate(docsDir, JSON.parse(readFileSync(join(here, '..', '..', 'references', 'completeness.json'), 'utf8')), { retired: rules.retired ?? [], now: flag('--now') });
   write(join(P.ref, 'completeness.json'), JSON.stringify(completeness, null, 1));
   const at = (cond, where) => (cond ? where : false);
   const present = {

@@ -73,9 +73,10 @@ test('risks.reviewed passes within 30 days, fails when stale, agent check report
   assert.equal(r2.registers[0].criteria.find(c => c.id === 'risks.reviewed').status, 'fail');
 });
 
-test('risks.reviewed throws when opts.now is not supplied', () => {
+test('risks.reviewed is skipped as an agent check when opts.now is not supplied (keeps runs deterministic)', () => {
   const root = docs({ 'architecture/risks.md': 'reviewed: 2026-08-20\n' });
-  assert.throws(() => evaluate(root, { 'risks.md': CRITERIA['risks.md'] }, {}), /opts\.now/);
+  const c = evaluate(root, { 'risks.md': CRITERIA['risks.md'] }, {}).registers[0].criteria.find(x => x.id === 'risks.reviewed');
+  assert.equal(c.status, 'agent');
 });
 
 test('stakeholders.defaults: missing name fails; struck line counts as present', () => {
@@ -114,7 +115,7 @@ test('glossary.frequent-nouns lists capitalised nouns used 3+ times that are not
   const r = evaluate(root, { 'glossary.md': [{ id: 'glossary.frequent-nouns', check: 'frequency', rule: 'x' }] }, {});
   assert.equal(r.registers[0].criteria[0].status, 'ok'); // Kernel is glossed
 
-  const ungrossed = 'The Widgetry runs. Widgetry twice. Widgetry thrice.\n';
+  const ungrossed = 'It uses the Widgetry daily, ships the Widgetry weekly, and tunes the Widgetry monthly.\n';
   const root2 = docs({ 'architecture/glossary.md': glossary, 'architecture/overview.md': ungrossed });
   const r2 = evaluate(root2, { 'glossary.md': [{ id: 'glossary.frequent-nouns', check: 'frequency', rule: 'x' }] }, {});
   assert.equal(r2.registers[0].criteria[0].status, 'fail');

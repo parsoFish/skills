@@ -58,8 +58,8 @@ function checkRiskRowSchema(md) {
 }
 
 function checkRiskReviewed(md, now) {
-  if (now === undefined) throw new Error('completeness: risks.reviewed needs opts.now');
-  const m = md.match(/^reviewed:\s*(\d{4}-\d{2}-\d{2})/m);
+  if (now === undefined) return { status: 'agent', detail: ['date check skipped: pass --now YYYY-MM-DD to evaluate deterministically'] };
+  const m = md.match(/\breviewed:\s*(\d{4}-\d{2}-\d{2})/);
   if (!m) return { ok: false, detail: ['no "reviewed: YYYY-MM-DD" header line'] };
   const days = (new Date(now) - new Date(m[1])) / 86400000;
   return { ok: days >= 0 && days <= 30, detail: days >= 0 && days <= 30 ? [] : [`reviewed ${m[1]}, ${Math.round(days)} days ago`] };
@@ -121,7 +121,9 @@ function checkFrequentNouns(docsRoot, glossaryMd) {
   const files = walk(archDir).filter(p => p.endsWith('.md') && !p.includes(`${archDir}/_run`) && !/[/\\]_run[/\\]/.test(p));
   const counts = new Map();
   for (const p of files) {
-    for (const w of readFileSync(p, 'utf8').match(/\b[A-Z][a-z]{2,}\b/g) ?? []) counts.set(w, (counts.get(w) ?? 0) + 1);
+    // mid-sentence capitalised words only (preceded by a lowercase word), so sentence starts and headings do not count
+    const text = readFileSync(p, 'utf8').replace(/```[\s\S]*?```/g, '').replace(/`[^`]*`/g, '');
+    for (const m of text.matchAll(/[a-z,;] ([A-Z][a-z]{3,})\b/g)) counts.set(m[1], (counts.get(m[1]) ?? 0) + 1);
   }
   const frequent = [...counts.entries()].filter(([w, n]) => n >= 3 && !glossaryTerms.has(w.toLowerCase())).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   return { ok: frequent.length === 0, detail: frequent.map(([w, n]) => `${w} (${n})`) };
@@ -149,7 +151,7 @@ const AGENT = detail => ({ status: 'agent', detail });
 function evalCriterion(id, { md, docsRoot, opts }) {
   switch (id) {
     case 'risks.row-schema': { const r = checkRiskRowSchema(md); return { status: r.ok ? 'ok' : 'fail', detail: r.detail }; }
-    case 'risks.reviewed': { const r = checkRiskReviewed(md, opts.now); return { status: r.ok ? 'ok' : 'fail', detail: r.detail }; }
+    case 'risks.reviewed': { if (opts.now === undefined) return { status: 'agent', detail: ['date check skipped: pass --now YYYY-MM-DD to evaluate deterministically'] }; const r = checkRiskReviewed(md, opts.now); return { status: r.ok ? 'ok' : 'fail', detail: r.detail }; }
     case 'stakeholders.defaults': { const r = checkStakeholderDefaults(md); return { status: r.ok ? 'ok' : 'fail', detail: r.detail }; }
     case 'stakeholders.views-covered': { const r = checkViewsCovered(docsRoot, md); return { status: r.ok ? 'ok' : 'fail', detail: r.detail }; }
     case 'glossary.retired': { const r = checkRetired(docsRoot, opts.retired); return { status: r.ok ? 'ok' : 'fail', detail: r.detail }; }

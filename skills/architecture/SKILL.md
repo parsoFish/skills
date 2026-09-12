@@ -27,7 +27,7 @@ Run it twice if in doubt: the outputs are byte-identical for the same input.
 
 ### Stage 2 — agent review (bounded)
 Read only agent-facing forms: `components.json`, `drift.json`, `fitness.json`, `gaps.json`, existing written docs. Then:
-1. Seed or update `docs/architecture/model/hand.c4` from the generated graph plus the kind template in `assets/`; tag runtime-only relationships so drift skips them.
+1. Seed or update `docs/architecture/model/hand.c4` from the generated graph plus the kind template in `assets/`; tag runtime-only relationships so drift skips them. Keep every view readable: no `include *` in the containers view, at most 12 nodes per view, the components view keeps `exclude * -> * where kind is minor`. Never edit `CHECKLIST.md` or anything under `reference/`: fix the facts they derive from (fold rules, `answers.json`, the written docs) and re-run stage 1.
 2. Draft or update the written docs the CHECKLIST for this kind requires (see house-style §3): overview, scenarios, journeys, loop, signals, secrets, risks, stakeholders, glossary, deps whys. Every non-code claim cites a file or ADR, or carries `GAP:`.
 3. Classify every gap: `kit` (the tooling should have known — record it in `_run/kit-issues.md`, do not patch the project), `project` (the repo must change — list it in `review.md`, do not do it), `human` (write an interview question).
 4. Check the registers against [references/completeness.json](references/completeness.json) and state unmet criteria as GAP lines in each file's header.
