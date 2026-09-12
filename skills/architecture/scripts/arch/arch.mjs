@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 
 import { join, resolve, dirname, basename } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { classify } from './classify.mjs';
+import { classify, foldRulesCheatSheet } from './classify.mjs';
 import { fold, cycles } from './fold.mjs';
 import { drift, writeBaselineProposal, shrinkBaseline } from './drift.mjs';
 import { check } from './check.mjs';
@@ -25,6 +25,7 @@ import { specC4, generatedC4, seedHandC4 } from './model.mjs';
 import { render } from './render.mjs';
 import { evaluate } from './completeness.mjs';
 import { buildGaps, interviewMd, kitIssuesMd, projectChangesMd, loadAnswers, reconcileProjectChanges } from './interview.mjs';
+import { briefMd } from './brief.mjs';
 import { checklistMd, viewShape, requiredViews } from './checklist.mjs';
 import { indexMd } from './present.mjs';
 import { bundleHtml } from './present-html.mjs';
@@ -32,6 +33,10 @@ import { buildAgentMap, agentMapMd } from './agent-map.mjs';
 import { writeSnapshot, readSnapshot, guardReport, isOpen, close as closeGuard } from './guard.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
+// Pinned tool versions live in one place, tools.json at the repo/plugin root (four levels up from
+// this skill-script directory), so a byte-identical rerun never depends on "whatever npx resolved
+// today" and there is exactly one place to bump a version.
+const TOOLS = JSON.parse(readFileSync(join(here, '..', '..', '..', '..', 'tools.json'), 'utf8'));
 const args = process.argv.slice(2);
 const flag = name => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; };
 const has = name => args.includes(name);
@@ -68,7 +73,7 @@ export function extractComponents(rules) {
   let dc;
   const engine = rules.engine ?? 'builtin';
   if (engine === 'dependency-cruiser') {
-    const argv = ['--yes', '-p', 'dependency-cruiser@18', 'depcruise', '--no-config', '--output-type', 'json'];
+    const argv = ['--yes', '-p', `dependency-cruiser@${TOOLS['dependency-cruiser']}`, 'depcruise', '--no-config', '--output-type', 'json'];
     if (rules.tsConfig) argv.push('--ts-config');
     argv.push('--include-only', rules.include ?? '^(src|apps|packages|lib)', ...(rules.roots ?? ['.']));
     dc = JSON.parse(execFileSync('npx', argv, { cwd: root, maxBuffer: 1 << 28, stdio: ['ignore', 'pipe', 'pipe'] }).toString());
@@ -195,6 +200,8 @@ function run() {
   const answers = loadAnswers(join(P.arch, 'answers.json'));
   write(join(P.run, 'questions.md'), interviewMd(gaps, answers)); // kit questions; stage 2 curates them into interview.md
   write(join(P.run, 'kit-issues.md'), kitIssuesMd(gaps));
+  // the one file stage 2 has to read before writing anything
+  write(join(P.run, 'brief.md'), briefMd({ sys, kinds, components, rules, drift: d, baseline, fitness, completeness, handEdges: hand.edges, gaps, sha }));
   const prevChanges = readJson(join(P.run, 'project-changes.json'), null);
   const iso = x => (x ? new Date(x).toISOString() : x);
   const changes = reconcileProjectChanges(prevChanges ?? [], gaps, flag('--now') ? new Date(flag('--now')) : new Date(0))
@@ -215,14 +222,16 @@ function run() {
   write(join(P.run, 'index.html'), bundleHtml({
     views: views.map(v => { const id = v.replace(/\.png$/, ''); return { id, title: meta[id]?.title ?? id, description: meta[id]?.description ?? '', pngPath: join(P.views, v) }; }),
     written: writtenList.map(md), generated: generatedList.map(md),
-    run: ['interview.md', 'questions.md', 'review.md', 'project-changes.md', 'kit-issues.md', 'run.md'].filter(f => existsSync(join(P.run, f))).map(f => ({ path: f, markdown: readFileSync(join(P.run, f), 'utf8') })),
+    run: ['interview.md', 'questions.md', 'review.md', 'project-changes.md', 'kit-issues.md', 'brief.md', 'run.md'].filter(f => existsSync(join(P.run, f))).map(f => ({ path: f, markdown: readFileSync(join(P.run, f), 'utf8') })),
     legend: legendFromSpec(), meta: { project: sys.title, sha: sha ?? 'unknown', generatedBy: 'arch run' },
   }));
   console.log(`kinds ${kinds.kinds.join('+')} · ${components.nodes.length} components · ${components.edges.length} edges · ${components.cycles.length} cycles · drift ${d.unexplained} · ${views.length} views · ${gaps.length} gaps → ${docsDir}`);
 }
 
 if (isEntry) switch (cmd) {
-  case 'classify': console.log(JSON.stringify(classify(root), null, 1)); break;
+  case 'classify':
+    if (has('--help-fold-rules')) { console.log(foldRulesCheatSheet()); break; }
+    console.log(JSON.stringify(classify(root), null, 1)); break;
   case 'extract': {
     const table = extractorTable(loadRules());
     if (!table[sub]) { console.error(`unknown extractor ${sub}; one of ${Object.keys(table).join(', ')}`); process.exitCode = 2; break; }
@@ -250,5 +259,5 @@ if (isEntry) switch (cmd) {
     if (sub === 'close') { console.log(`stage 2 closed: ${closeGuard(docsDir)}`); break; }
     console.error('usage: arch guard <snapshot|verify|close> [root] --out <docsDir>'); process.exitCode = 2; break;
   }
-  default: console.log('usage: arch <classify|extract <kind>|drift|check|run|guard <snapshot|verify|close>> [root] [--out <docsDir>] [--no-render] [--now YYYY-MM-DD] [--force]'); process.exitCode = 2;
+  default: console.log('usage: arch <classify [--help-fold-rules]|extract <kind>|drift|check|run|guard <snapshot|verify|close>> [root] [--out <docsDir>] [--no-render] [--now YYYY-MM-DD] [--force]'); process.exitCode = 2;
 }

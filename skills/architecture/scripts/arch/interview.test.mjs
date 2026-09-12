@@ -56,6 +56,14 @@ test('delivery.requiredChecks null is a kit gap; undefined delivery raises nothi
   assert.deepEqual(buildGaps({ delivery: { requiredChecks: ['ci'] } }), []);
 });
 
+test('delivery.requiredChecks null offers the real remedy (an answers.json entry), never the nonexistent --github flag', () => {
+  const g = buildGaps({ delivery: { requiredChecks: null } })[0];
+  assert.deepEqual(g.options, ['set delivery.requiredChecks in docs/architecture/answers.json']);
+  assert.equal(g.default, 'set delivery.requiredChecks in docs/architecture/answers.json');
+  assert.ok(!g.finding.includes('--github'));
+  assert.ok(!g.options.join(' ').includes('--github'));
+});
+
 test('tests.taggingAdopted false is a project gap', () => {
   const gaps = buildGaps({ tests: { taggingAdopted: false } });
   assert.equal(gaps[0].class, 'project');

@@ -74,9 +74,9 @@ const GAPS = {
   }),
   requiredChecksUnknown: () => gap({
     id: 'delivery-required-checks-unknown', class: 'kit', title: 'Delivery extractor could not read required checks',
-    finding: 'delivery.requiredChecks is null; the extractor needs a GitHub token to read branch-protection required checks.',
-    evidence: ['docs/reference/delivery.json requiredChecks: null'], options: ['re-run arch with --github'],
-    default: 're-run arch with --github', changes: ['_run/kit-issues.md'],
+    finding: 'delivery.requiredChecks is null; the extractor has no GitHub token and makes no network call, so it cannot read branch-protection required checks.',
+    evidence: ['docs/reference/delivery.json requiredChecks: null'], options: ['set delivery.requiredChecks in docs/architecture/answers.json'],
+    default: 'set delivery.requiredChecks in docs/architecture/answers.json', changes: ['_run/kit-issues.md'],
   }),
 };
 

@@ -139,6 +139,15 @@ test('bundleHtml renders the legend strip from the legend prop', () => {
   assert.match(html, /Service — a running process or daemon/);
 });
 
+test('bundleHtml stays self-contained offline: no Google Fonts or any other external stylesheet, system font stack instead', () => {
+  const html = bundleHtml(baseInput());
+  assert.ok(!html.includes('fonts.googleapis.com'));
+  assert.ok(!html.includes('fonts.gstatic.com'));
+  assert.ok(!/<link[^>]*rel="stylesheet"/i.test(html));
+  assert.ok(!html.includes('IBM Plex'));
+  assert.match(html, /font-family:\s*system-ui/);
+});
+
 test('bundleHtml header carries project, sha, and generatedBy', () => {
   const html = bundleHtml(baseInput());
   assert.match(html, /<h1>Acme<\/h1>/);

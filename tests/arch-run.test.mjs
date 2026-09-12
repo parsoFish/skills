@@ -32,7 +32,7 @@ test('arch run --out writes only under the out dir, is deterministic, and emits 
   const before = readdirSync(root).sort();
   execFileSync('node', [ARCH, 'run', root, '--out', out, '--no-render'], { stdio: 'pipe' });
   assert.deepEqual(readdirSync(root).sort(), before, 'source tree untouched');
-  for (const f of ['reference/components.json', 'reference/components.md', 'reference/drift.md', 'reference/deps.md', 'reference/delivery.md', 'reference/env.md', 'reference/fitness.md', 'architecture/CHECKLIST.md', 'architecture/model/spec.c4', 'architecture/model/generated.c4', 'architecture/model/hand.c4', 'architecture/_run/gaps.json', 'architecture/_run/questions.md', 'architecture/_run/index.md']) assert.ok(existsSync(join(out, f)), `missing ${f}`);
+  for (const f of ['reference/components.json', 'reference/components.md', 'reference/drift.md', 'reference/deps.md', 'reference/delivery.md', 'reference/env.md', 'reference/fitness.md', 'architecture/CHECKLIST.md', 'architecture/model/spec.c4', 'architecture/model/generated.c4', 'architecture/model/hand.c4', 'architecture/_run/gaps.json', 'architecture/_run/questions.md', 'architecture/_run/brief.md', 'architecture/_run/index.md']) assert.ok(existsSync(join(out, f)), `missing ${f}`);
   const first = snapshot(out);
   execFileSync('node', [ARCH, 'run', root, '--out', out, '--no-render'], { stdio: 'pipe' });
   assert.deepEqual(snapshot(out), first, 'byte-identical on rerun');

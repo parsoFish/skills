@@ -4,10 +4,62 @@
 // Dockerfile/compose/Helm chart anywhere in the tree) walk the real `root` directly with
 // walkFiles, since a fake, non-existent root safely yields zero matches there.
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { walkFiles } from './walk.mjs';
 
+const here = dirname(fileURLToPath(import.meta.url));
+
 export const KINDS = ['cli', 'service', 'iac', 'plugin', 'simulation', 'hardware', 'pipeline', 'extension', 'library'];
+
+// One line of guidance per field the two shipped fold-rules files carry. Keyed off those files'
+// own keys (see foldRulesCheatSheet) so a field renamed there without an update here is still
+// listed — just with a generic note instead of a wrong one.
+const FIELD_NOTES = {
+  include: 'regex string; which top-level dirs the builtin/dependency-cruiser engines scan for source files',
+  roots: 'array of dirs (relative to the project root) the engine scans from',
+  engine: "'builtin' (offline relative-import scanner, default) | 'go' (offline Go package scanner) | 'dependency-cruiser' (needs npx, resolves tsconfig paths)",
+  tsConfig: 'true to pass --ts-config to dependency-cruiser; ignored by builtin/go',
+  rules: "array of {match: '<regex>', component: '<name, may use $1 from match groups>'} — first match wins, folds a file path into a named component",
+  registries: "array of {name, glob} — extension-point discovery globs read by extract-ext-points.mjs",
+  scanIgnore: 'array of glob-ish path prefixes excluded from every extractor (vendored trees, archives, generated dirs)',
+  minorEdgeThreshold: 'integer; edges with count below this render as untitled kind minor and are hidden from rendered views',
+};
+
+// Real fold-rules.json keys that never appear in either shipped file because they default to
+// {}/[] when absent — SKILL.md's stage 0 names these as the ones worth adjusting per project.
+const UNSHOWN_FIELDS = {
+  system: "{id, title} — overrides the system container's id/title (default: {id: 'system', title: <project dir name>})",
+  kinds: '{"<component id>": "<house kind>"} — overrides model.mjs inferKind() per component',
+  titles: '{"<component id>": "<display title>"} — overrides the container/component title in generated.c4',
+  descriptions: '{"<component id>": "<one line>"} — shown in generated.c4, capped at 90 characters',
+  areas: '{"<area name>": ["<component id>", ...]} — seeds one hand.c4 view per area',
+  retired: '["term", ...] — words the naming.retired fitness rule and glossary.retired completeness check flag',
+};
+
+/**
+ * Every field of fold-rules.json with its default and one example, generated from the two shipped
+ * files' own keys so this sheet cannot drift from them. Lets stage 0 skip grepping model.mjs /
+ * walk.mjs for the schema. `assets/fold-rules.json` is the copy-to-project template; this skill
+ * script's own `fold-rules.default.json` is the runtime fallback `loadRules()` reads when a
+ * project has not adopted one yet — read both since their key sets differ slightly.
+ */
+export function foldRulesCheatSheet() {
+  const runtimeDefault = JSON.parse(readFileSync(join(here, 'fold-rules.default.json'), 'utf8'));
+  const template = JSON.parse(readFileSync(join(here, '..', '..', 'assets', 'fold-rules.json'), 'utf8'));
+  const keys = [...new Set([...Object.keys(runtimeDefault), ...Object.keys(template)])];
+  const lines = [
+    '# fold-rules.json fields', '',
+    'Generated from fold-rules.default.json + assets/fold-rules.json — every field below is real; nothing here is invented.', '',
+  ];
+  for (const key of keys) {
+    const value = key in runtimeDefault ? runtimeDefault[key] : template[key];
+    lines.push(`- \`${key}\`: ${FIELD_NOTES[key] ?? 'see assets/fold-rules.json'}`, `  default: ${JSON.stringify(value)}`);
+  }
+  lines.push('', 'Optional fields not present in either shipped file because they default to `{}`/`[]` when absent:');
+  for (const [key, note] of Object.entries(UNSHOWN_FIELDS)) lines.push(`- \`${key}\`: ${note}`);
+  return `${lines.join('\n')}\n`;
+}
 
 function readAll(root, exts) {
   return walkFiles(root, { exts }).map(rel => { try { return readFileSync(join(root, rel), 'utf8'); } catch { return ''; } }).join('\n');

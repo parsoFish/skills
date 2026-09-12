@@ -2,11 +2,13 @@
 // written docs, then generated docs, then run artifacts (review/interview/etc.), navigable from a
 // sticky file tree. Markdown and Mermaid render client-side (marked + mermaid from cdnjs); this
 // module's own job is to assemble one HTML string — no fs writes here except reading the PNG
-// bytes a caller points us at via `pngPath`.
+// bytes a caller points us at via `pngPath`. Typography is the system font stack, not a Google
+// Fonts <link>: the bundle must stay self-contained offline, which is where the eval sandbox lives.
 import { readFileSync } from 'node:fs';
 import { sanitizeId } from './model.mjs';
 
-const FONTS_HREF = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap';
+const SANS_STACK = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+const MONO_STACK = "ui-monospace, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace";
 const MARKED_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js';
 // cdnjs mirrors mermaid 11.4.1 as ESM chunks only (no root mermaid.min.js — confirmed via the
 // cdnjs API and a live 404), so this pins 11.4.0, the nearest patch that still ships one.
@@ -103,11 +105,11 @@ function buildCss() {
 html, body { margin: 0; padding: 0; }
 body {
   background: var(--bg); color: var(--fg);
-  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-family: ${SANS_STACK};
   line-height: 1.55;
 }
-h1, h2, h3 { font-family: 'IBM Plex Sans Condensed', 'IBM Plex Sans', sans-serif; font-weight: 600; line-height: 1.2; }
-code, pre, .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+h1, h2, h3 { font-family: ${SANS_STACK}; font-weight: 600; line-height: 1.2; }
+code, pre, .mono { font-family: ${MONO_STACK}; }
 a { color: var(--accent); }
 .shell { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: 100vh; }
 .tree { background: var(--nav-bg); border-right: 1px solid var(--border); padding: 20px 16px; position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; }
@@ -298,7 +300,6 @@ export function bundleHtml({ views = [], written = [], generated = [], run = [],
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
-<link rel="stylesheet" href="${attr(FONTS_HREF)}">
 <style>${buildCss()}</style>
 </head>
 <body>

@@ -1,10 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { specC4, generatedC4, seedHandC4, sanitizeId, inferKind } from './model.mjs';
+
+// Pinned in one place, tools.json at the repo/plugin root, so this test never drifts from the
+// version arch.mjs itself resolves against (see arch.mjs's own TOOLS read, four levels up).
+const here = dirname(fileURLToPath(import.meta.url));
+const LIKEC4 = JSON.parse(readFileSync(join(here, '..', '..', '..', '..', 'tools.json'), 'utf8')).likec4;
 
 const components = {
   nodes: [
@@ -21,7 +27,7 @@ const components = {
 /** True when likec4 can run fully offline (already cached by a prior `npx`). */
 function likec4CachedOffline() {
   try {
-    execFileSync('npx', ['--no-install', 'likec4@1.59.3', '--version'], { stdio: 'ignore' });
+    execFileSync('npx', ['--no-install', `likec4@${LIKEC4}`, '--version'], { stdio: 'ignore' });
     return true;
   } catch {
     return false;
@@ -180,13 +186,13 @@ test('seedHandC4 is pure: does not touch the filesystem and returns fresh text e
 // run the CLI validator. Skipped (never failed) when likec4 cannot run without network access.
 test('the legend plus a generated model plus a seeded hand.c4 validate as LikeC4 syntax', t => {
   if (!likec4CachedOffline()) {
-    t.skip('likec4 is not available offline (npx --no-install likec4@1.59.3 failed)');
+    t.skip(`likec4 is not available offline (npx --no-install likec4@${LIKEC4} failed)`);
     return;
   }
   const dir = mkdtempSync(join(tmpdir(), 'likec4-model-'));
   writeFileSync(join(dir, 'spec.c4'), specC4());
   writeFileSync(join(dir, 'generated.c4'), generatedC4(components, { systemId: 'acme', systemTitle: 'Acme' }));
   writeFileSync(join(dir, 'hand.c4'), seedHandC4(components, { systemId: 'acme', areas: { core: ['webui'] } }));
-  const out = execFileSync('npx', ['--yes', 'likec4@1.59.3', 'validate', dir], { encoding: 'utf8' });
+  const out = execFileSync('npx', ['--yes', `likec4@${LIKEC4}`, 'validate', dir], { encoding: 'utf8' });
   assert.match(out, /Valid/);
 });
