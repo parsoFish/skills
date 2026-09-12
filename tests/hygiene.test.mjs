@@ -46,7 +46,9 @@ test('every script under scripts/** or skills/*/scripts/** is at most 400 lines'
  * choosing which version to shell out to, and is out of scope here. */
 test('the dependency-cruiser and likec4 versions are pinned in exactly one place: tools.json', () => {
   const tools = JSON.parse(readFileSync(join(ROOT, 'tools.json'), 'utf8'));
-  const files = trackedFiles().filter(f => TEXT_SOURCE.test(f) && f !== 'tools.json' && !f.endsWith('.test.mjs'));
+  // Evidence and reports under evals/ quote whatever an eval run printed (an agent's own `npx likec4@…`),
+  // which is a transcript, not a place the kit chooses a version.
+  const files = trackedFiles().filter(f => TEXT_SOURCE.test(f) && f !== 'tools.json' && !f.endsWith('.test.mjs') && !/^evals\/(attest\/|REPORT\.md$|ledger\.md$|gate-report\.json$)/.test(f));
   const offenders = [];
   for (const [name, version] of [['likec4', tools.likec4], ['dependency-cruiser', tools['dependency-cruiser']]]) {
     const needle = `${name}@${version}`;
