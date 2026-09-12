@@ -1,9 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { classify } from './classify.mjs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { classify, foldRulesCheatSheet } from './classify.mjs';
+
+const here = dirname(fileURLToPath(import.meta.url));
 
 function fakeFs(files) { return { exists: p => p in files, read: p => files[p], list: p => Object.keys(files).filter(f => f.startsWith(p === '.' ? '' : p + '/')).map(f => f.slice(p === '.' ? 0 : p.length + 1).split('/')[0]) }; }
 
@@ -121,4 +124,26 @@ test('pyproject with typer is cli', () => {
 test('an empty repo never returns an empty kinds list — falls back to library', () => {
   const root = project({});
   assert.deepEqual(classify(root), { kinds: ['library'], evidence: ['no manifest signal'], ambiguous: false });
+});
+
+test('foldRulesCheatSheet lists every key of both shipped fold-rules files, generated so it cannot drift', () => {
+  const defaults = JSON.parse(readFileSync(join(here, 'fold-rules.default.json'), 'utf8'));
+  const template = JSON.parse(readFileSync(join(here, '..', '..', 'assets', 'fold-rules.json'), 'utf8'));
+  const sheet = foldRulesCheatSheet();
+  for (const key of new Set([...Object.keys(defaults), ...Object.keys(template)])) {
+    assert.match(sheet, new RegExp('`' + key + '`'), `missing field ${key}`);
+  }
+  // a key present only in the template (not the runtime default) still gets its template value.
+  assert.match(sheet, /`registries`[\s\S]*default: \[\]/);
+});
+
+test('foldRulesCheatSheet also documents the fields neither shipped file shows (they default to {}/[])', () => {
+  const sheet = foldRulesCheatSheet();
+  for (const key of ['system', 'kinds', 'titles', 'descriptions', 'areas', 'retired']) {
+    assert.match(sheet, new RegExp('`' + key + '`'), `missing unshown field ${key}`);
+  }
+});
+
+test('foldRulesCheatSheet is pure and deterministic', () => {
+  assert.equal(foldRulesCheatSheet(), foldRulesCheatSheet());
 });

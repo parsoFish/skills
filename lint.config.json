@@ -1,4 +1,15 @@
 {
   "forbiddenTerms": ["forge", "gitweave", "betterado", "mdtoc", "gitpulse", "trafficgame", "dj-lights", "linearb", "parso", "parsonson"],
-  "scan": ["skills", "evals"]
+  "maxSkillBytes": 512000,
+  "allowedFlags": {
+    "architecture": ["--help"]
+  },
+  "lintExcludePaths": [
+    "evals/attest/**",
+    "evals/REPORT.md",
+    "evals/ledger.md",
+    "evals/gate-report.json",
+    "evals/results/**",
+    "evals/gate-eval*.json"
+  ]
 }

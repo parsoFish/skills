@@ -1,0 +1,11 @@
+{
+  "threshold": 0.8,
+  "minDelta": 0.25,
+  "maxCostUsd": 5,
+  "reviewBudgetUsd": 2,
+  "evalModel": "claude-sonnet-5",
+  "judgeModel": "claude-haiku-4-5",
+  "reviewModel": "claude-sonnet-5",
+  "maxAttestationAgeDays": 30,
+  "resultsKeep": 3
+}

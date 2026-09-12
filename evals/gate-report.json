@@ -1,6 +1,25 @@
 {
+ "schema": 2,
+ "ok": true,
+ "attested": true,
+ "agenticRan": true,
+ "bypass": null,
+ "generatedAt": "2026-09-12T18:18:58.672Z",
+ "commit": "ecde8606b115bf1fba1c99dab9cf8f26254c993f",
+ "claudeVersion": "2.1.269",
+ "pluginVersion": "0.2.0",
+ "scope": {
+  "skills": [
+   "architecture",
+   "eval-authoring",
+   "skill-dev"
+  ],
+  "harness": true
+ },
  "changed": [
-  "architecture"
+  "architecture",
+  "eval-authoring",
+  "skill-dev"
  ],
  "steps": [
   {
@@ -29,40 +48,108 @@
    "detail": ""
   },
   {
-   "name": "claude plugin eval (3 cases)",
+   "name": "skill-creator quick_validate eval-authoring",
    "ok": true,
-   "detail": "document-a-terraform-repo 1 Δ1 · document-a-ts-monorepo 1 Δ1 · drift-catches-a-new-edge 1 Δ0.5"
+   "detail": "Skill is valid!"
   },
   {
-   "name": "structural review architecture",
+   "name": "eval case with Skill grader eval-authoring",
    "ok": true,
-   "detail": "pass: no findings"
+   "detail": ""
+  },
+  {
+   "name": "skill-creator quick_validate skill-dev",
+   "ok": true,
+   "detail": "Skill is valid!"
+  },
+  {
+   "name": "eval case with Skill grader skill-dev",
+   "ok": true,
+   "detail": ""
   }
  ],
- "ok": true,
- "contentHash": "4cf6a768296ebb44a1e29e8f179550d8d6c0255803c14252e0cc4c15ec5795e4",
- "agenticRan": true,
  "eval": {
-  "ok": true,
-  "score": 1,
   "threshold": 0.8,
+  "minDelta": 0.25,
   "cases": [
    {
     "name": "document-a-terraform-repo",
+    "skill": "architecture",
+    "model": "claude-sonnet-5",
+    "judge": "claude-haiku-4-5",
+    "evidence": "evals/attest/document-a-terraform-repo.json",
     "score": 1,
+    "scoreWithout": 0,
     "delta": 1,
+    "partial": false,
+    "errors": [],
+    "turns": 88,
+    "costUsd": 2.0592141999999996,
+    "durationSeconds": 735,
     "exit": 0
    },
    {
     "name": "document-a-ts-monorepo",
+    "skill": "architecture",
+    "model": "claude-sonnet-5",
+    "judge": "claude-haiku-4-5",
+    "evidence": "evals/attest/document-a-ts-monorepo.json",
     "score": 1,
+    "scoreWithout": 0,
     "delta": 1,
+    "partial": false,
+    "errors": [],
+    "turns": 93,
+    "costUsd": 2.1035097999999994,
+    "durationSeconds": 713,
     "exit": 0
    },
    {
     "name": "drift-catches-a-new-edge",
+    "skill": "architecture",
+    "model": "claude-sonnet-5",
+    "judge": "claude-haiku-4-5",
+    "evidence": "evals/attest/drift-catches-a-new-edge.json",
     "score": 1,
-    "delta": 0.5,
+    "scoreWithout": 0,
+    "delta": 1,
+    "partial": false,
+    "errors": [],
+    "turns": 13,
+    "costUsd": 0.420957,
+    "durationSeconds": 118,
+    "exit": 0
+   },
+   {
+    "name": "writes-a-case-for-changelog-line",
+    "skill": "eval-authoring",
+    "model": "claude-sonnet-5",
+    "judge": "claude-haiku-4-5",
+    "evidence": "evals/attest/writes-a-case-for-changelog-line.json",
+    "score": 1,
+    "scoreWithout": 0.6666666666666666,
+    "delta": 0.33333333333333337,
+    "partial": false,
+    "errors": [],
+    "turns": 23,
+    "costUsd": 0.5088092,
+    "durationSeconds": 214,
+    "exit": 0
+   },
+   {
+    "name": "adds-a-csv-to-table-skill",
+    "skill": "skill-dev",
+    "model": "claude-sonnet-5",
+    "judge": "claude-haiku-4-5",
+    "evidence": "evals/attest/adds-a-csv-to-table-skill.json",
+    "score": 1,
+    "scoreWithout": 0.5714285714285714,
+    "delta": 0.4285714285714286,
+    "partial": false,
+    "errors": [],
+    "turns": 21,
+    "costUsd": 0.6749372,
+    "durationSeconds": 232,
     "exit": 0
    }
   ]
@@ -70,7 +157,49 @@
  "review": {
   "architecture": {
    "verdict": "pass",
-   "findings": []
+   "findings": [
+    {
+     "severity": "minor",
+     "finding": "SKILL.md frontmatter 'description' is one very long, densely packed sentence-pair (~600 chars). It does satisfy the requirements (third-person, names trigger phrases like 'C4 or context diagrams', 'ADR index', 'risk register', 'dependency ledger', quoted user phrasing, and an explicit 'Use when...' clause), but it could be tightened for scanability without losing content."
+    },
+    {
+     "severity": "minor",
+     "finding": "Could not execute `node --test scripts/arch/*.test.mjs` in this sandboxed review session (command required approval that was out of scope for a read-only review), so test presence was verified structurally (every non-test .mjs in scripts/arch/ has a matching *.test.mjs) but not confirmed to pass at review time."
+    }
+   ],
+   "costUsd": 0.22063499999999997
+  },
+  "eval-authoring": {
+   "verdict": "pass",
+   "findings": [],
+   "costUsd": 0.11554160000000001
+  },
+  "skill-dev": {
+   "verdict": "pass",
+   "findings": [
+    {
+     "severity": "minor",
+     "finding": "Step 5 hard-references the sibling 'eval-authoring' skill by name ('use the eval-authoring skill for this step'). This works within the parso-skills plugin but weakens portability if skill-dev is extracted standalone (e.g. via `npx skills add --skill skill-dev` into a stranger's repo) — the referenced skill won't exist there and the instruction has no fallback."
+    },
+    {
+     "severity": "minor",
+     "finding": "No references/, scripts/, or assets/ subdirectories exist. This is acceptable since skill-dev is a process/workflow skill with no deterministic tooling of its own, but it means the file has no progressive-disclosure split to verify — everything (112 lines) lives in SKILL.md itself, which is fine under the 500-line cap but worth noting since the review asked to check references/ and scripts/ specifically."
+    }
+   ],
+   "costUsd": 0.1004004
   }
- }
+ },
+ "totals": {
+  "costUsd": 6.204004399999999,
+  "durationSeconds": 2012
+ },
+ "skillsDigest": "d701aa223cf93ae9602f03d9dc521361f5c46ec8bdb680f753a43d915057892f",
+ "harnessDigest": "27c741b9617f3639a5a4a6daf22a8633a2794af4e9bbb704317b61687a313f05",
+ "reusedEvals": [
+  "document-a-terraform-repo",
+  "document-a-ts-monorepo",
+  "drift-catches-a-new-edge",
+  "writes-a-case-for-changelog-line",
+  "adds-a-csv-to-table-skill"
+ ]
 }

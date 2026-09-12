@@ -2,9 +2,10 @@
 // with a plain PIL script. Every subprocess call goes through an injectable `exec` so tests never
 // shell out to npx/likec4 or a real python3.
 import { spawnSync } from 'node:child_process';
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 
-const LIKEC4 = 'likec4@1.59.3';
+// Pinned in tools.json (repo/plugin root) so every tool version lives in exactly one place.
+const LIKEC4 = `likec4@${JSON.parse(readFileSync(new URL('../../../../tools.json', import.meta.url), 'utf8')).likec4}`;
 const MAX_WIDTH = 1800;
 
 const POSTPROCESS_PY = `

@@ -1,0 +1,23 @@
+name: Decision needed
+description: Blocked on the owner's judgement — do not guess or invent scope; an agent should stop here and wait.
+title: "[decision] "
+labels: ["needs-decision"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: The question
+      description: State it so a yes/no or a pick-one answer unblocks the work.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Why this needs a person
+      description: What was tried, and why the agent could not resolve it alone (a judgement call, conflicting rules, cost/scope tradeoff, an ADR that would need updating).
+    validations:
+      required: true
+  - type: textarea
+    id: options
+    attributes:
+      label: Options considered (optional)

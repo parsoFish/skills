@@ -1,58 +1,108 @@
 name: skills-ci
 on:
   workflow_dispatch:
-  push: { branches: [main] }
+    inputs:
+      real_evals:
+        description: "Run the real agentic gate (spends money against a live ANTHROPIC_API_KEY) — the periodic truth-check that a local attestation is not a lie, never a merge gate."
+        type: boolean
+        default: false
+  push:
+    branches: [main]
   pull_request:
+
 jobs:
+  # Required check. Lint, tests, strict manifest validation, skill-creator validation, and the
+  # deterministic half of the gate (no agentic spend). No job-level `if`, no `on.paths` — a required
+  # check that never starts wedges every PR forever.
   deterministic:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with: { fetch-depth: 0 }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with: { node-version: 22 }
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with: { python-version: "3.12" }
       - run: pip install pyyaml
       - run: npm run lint
       - run: npm test
       - name: Strict plugin validation + skill-creator validator (deterministic half of the gate)
         run: |
-          npm install -g @anthropic-ai/claude-code
+          npm install -g @anthropic-ai/claude-code@2.1.269
           claude plugin validate . --strict
           claude plugin marketplace add anthropics/skills || true
           claude plugin install skill-creator@anthropic-agent-skills || true
-          node scripts/gate.mjs --base origin/${{ github.base_ref || 'main' }} --no-agentic
-  agentic-gate:
-    # Any PR that touches a skill or its evals must pass the agentic gate (plugin eval + structural review). Bounded by --max-cost-usd.
-    needs: deterministic
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+          node scripts/gate.mjs --no-agentic --base origin/${{ github.base_ref || 'main' }}
+
+  # Required check. Recomputes skillsDigest/harnessDigest from git blob SHAs and re-checks coverage,
+  # freshness, review verdicts and release discipline against the exact head SHA — no API key, no
+  # network, no job-level `if`, no `on.paths`. This is the check that gets required (see
+  # scripts/protect-main.mjs).
+  attested:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with: { fetch-depth: 0 }
-      - id: changed
-        run: |
-          base=origin/${{ github.base_ref || 'main' }}
-          if git diff --name-only "$base...HEAD" | grep -qE '^(skills|evals)/'; then echo "skills=true" >> "$GITHUB_OUTPUT"; else echo "skills=false" >> "$GITHUB_OUTPUT"; fi
-      - uses: actions/setup-node@v4
-        if: steps.changed.outputs.skills == 'true'
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with: { node-version: 22 }
-      - uses: actions/setup-python@v5
-        if: steps.changed.outputs.skills == 'true'
-        with: { python-version: '3.12' }
-      - name: Agentic gate (requires ANTHROPIC_API_KEY)
-        if: steps.changed.outputs.skills == 'true'
+      - name: Verify the attestation (pull requests — the merge gate)
+        if: github.event_name == 'pull_request'
+        run: node scripts/attest.mjs verify --base origin/${{ github.base_ref }}
+      - name: Print the digests (pushes to main are already merged; nothing to gate)
+        if: github.event_name != 'pull_request'
+        run: node scripts/attest.mjs digest
+      - name: Post the gate report to the PR (edits its own last comment instead of duplicating)
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ ! -f evals/REPORT.md ]; then
+            echo "no evals/REPORT.md on this branch (no skill change to attest) — nothing to post"
+            exit 0
+          fi
+          # evals/REPORT.md carries a leading `<!-- gate-report -->` marker; --edit-last targets this
+          # job's own previous comment on the PR, so a re-run updates it instead of piling up copies.
+          gh pr comment "${{ github.event.pull_request.number }}" --edit-last --body-file evals/REPORT.md \
+            || gh pr comment "${{ github.event.pull_request.number }}" --body-file evals/REPORT.md
+
+  # Optional, manual only. Never required: it needs a live ANTHROPIC_API_KEY and has real cost. This
+  # is the owner's periodic truth-check that local attestations are not lies — run it by hand before a
+  # release, not on every push.
+  agentic-gate-optional:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.real_evals == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with: { node-version: 22 }
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with: { python-version: "3.12" }
+      - name: Real agentic gate (spends money; skips cleanly without a key)
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          test -n "$ANTHROPIC_API_KEY" || { echo "ANTHROPIC_API_KEY secret missing: the agentic gate cannot run and a skill change must not merge without it"; exit 1; }
-          sudo apt-get update -qq && sudo apt-get install -y -qq bubblewrap socat   # sandbox backend for Bash-granting evals
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "ANTHROPIC_API_KEY is empty — skipping the real agentic gate (manual, non-blocking, spends nothing without it)"
+            exit 0
+          fi
+          sudo apt-get update -qq && sudo apt-get install -y -qq bubblewrap socat
           pip install pyyaml
-          npm install -g @anthropic-ai/claude-code
+          npm install -g @anthropic-ai/claude-code@2.1.269
           claude plugin marketplace add anthropics/skills || true
           claude plugin install skill-creator@anthropic-agent-skills || true
-          node scripts/gate.mjs --base origin/${{ github.base_ref || 'main' }} --max-cost-usd 10
-      - uses: actions/upload-artifact@v4
-        if: always() && steps.changed.outputs.skills == 'true'
-        with: { name: gate-report, path: evals/gate-report.json }
+          node scripts/gate.mjs --all --force --max-cost-usd 10
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: agentic-gate-results
+          path: |
+            evals/results/
+            evals/REPORT.md

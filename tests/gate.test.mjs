@@ -1,66 +1,123 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, copyFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { changedSkills, evalCoverage, readEvalResult, contentHash, cachedPass, sandboxEnv, harnessProblem, aggregateEvals } from '../scripts/gate.mjs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
+import { parseArgs, preDeterministicRoute, postDeterministicRoute } from '../scripts/gate.mjs';
 
-test('changedSkills maps skill and eval paths to skill names, deduplicated and sorted', () => {
-  assert.deepEqual(changedSkills(['skills/b/SKILL.md', 'evals/a/case/prompt.md', 'skills/b/scripts/x.mjs', 'README.md', 'scripts/gate.mjs']), ['a', 'b']);
-  assert.deepEqual(changedSkills([]), []);
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const GATE = join(ROOT, 'scripts', 'gate.mjs');
+
+test('parseArgs reads every flag the gate accepts, with sensible absent-flag defaults', () => {
+  const args = parseArgs(['--all', '--force', '--no-agentic', '--no-review', '--verify-only', '--base', 'origin/main', '--max-cost-usd', '10']);
+  assert.equal(args.all, true);
+  assert.equal(args.force, true);
+  assert.equal(args.noAgentic, true);
+  assert.equal(args.noReview, true);
+  assert.equal(args.verifyOnly, true);
+  assert.equal(args.base, 'origin/main');
+  assert.equal(args.maxCostUsd, '10');
+
+  const empty = parseArgs([]);
+  assert.equal(empty.all, false);
+  assert.equal(empty.base, undefined);
 });
 
-test('evalCoverage requires a case with a tool_used: Skill grader', () => {
-  const root = mkdtempSync(join(tmpdir(), 'gate-'));
-  assert.equal(evalCoverage(root, 'x').ok, false);
-  mkdirSync(join(root, 'evals', 'x', 'c1', 'graders'), { recursive: true });
-  writeFileSync(join(root, 'evals', 'x', 'c1', 'prompt.md'), 'do x');
-  assert.equal(evalCoverage(root, 'x').ok, false, 'case without Skill grader');
-  writeFileSync(join(root, 'evals', 'x', 'c1', 'graders', 'fired.md'), '---\ntype: tool_used\ntool: Skill\n---\nfired\n');
-  assert.deepEqual(evalCoverage(root, 'x'), { ok: true, cases: 1, detail: '' });
+test('preDeterministicRoute: nothing changed at all is a pure no-op', () => {
+  assert.equal(preDeterministicRoute({ scope: { skills: [], harness: false }, envSkip: false, bypassReason: null, args: {} }), 'noop');
 });
 
-test('readEvalResult applies the threshold and surfaces per-case deltas', () => {
-  const r = readEvalResult({ aggregates: { overallScore: 0.9 }, cases: [{ name: 'c', aggregates: { score: 0.9, delta: 0.4 } }] }, 0.8);
-  assert.equal(r.ok, true); assert.deepEqual(r.cases, [{ name: 'c', score: 0.9, delta: 0.4 }]);
-  assert.equal(readEvalResult({ aggregates: { overallScore: 0.5 } }).ok, false);
-  assert.equal(readEvalResult({}).ok, false, 'no score is a failure, never a pass');
+test('preDeterministicRoute: SKILLS_GATE_SKIP_AGENTIC=1 without a reason is a misuse failure whenever a skill actually changed', () => {
+  assert.equal(preDeterministicRoute({ scope: { skills: ['a'], harness: false }, envSkip: true, bypassReason: null, args: {} }), 'misuse');
 });
 
-test('contentHash changes with skill content and cachedPass honours ok + agenticRan + hash', () => {
-  const root = mkdtempSync(join(tmpdir(), 'gate-'));
-  mkdirSync(join(root, 'skills', 's'), { recursive: true }); writeFileSync(join(root, 'skills', 's', 'SKILL.md'), 'a');
-  const h1 = contentHash(root, ['s']);
-  writeFileSync(join(root, 'skills', 's', 'SKILL.md'), 'b');
-  const h2 = contentHash(root, ['s']);
-  assert.notEqual(h1, h2);
-  const rp = join(root, 'report.json');
-  writeFileSync(rp, JSON.stringify({ ok: true, agenticRan: true, contentHash: h2, eval: { score: 0.9 } }));
-  assert.equal(cachedPass(rp, h2)?.eval.score, 0.9);
-  assert.equal(cachedPass(rp, h1), null, 'different content is not a cached pass');
-  writeFileSync(rp, JSON.stringify({ ok: true, agenticRan: false, agenticSkipped: true, contentHash: h2 }));
-  assert.equal(cachedPass(rp, h2), null, 'a skipped agentic phase never counts as a pass');
+test('preDeterministicRoute: the env skip is not misuse when a bypass reason is given, or when --no-agentic/--verify-only already sanctions the skip', () => {
+  assert.equal(preDeterministicRoute({ scope: { skills: ['a'], harness: false }, envSkip: true, bypassReason: 'ci key rotation', args: {} }), 'run-deterministic');
+  assert.equal(preDeterministicRoute({ scope: { skills: ['a'], harness: false }, envSkip: true, bypassReason: null, args: { noAgentic: true } }), 'run-deterministic');
+  assert.equal(preDeterministicRoute({ scope: { skills: ['a'], harness: false }, envSkip: true, bypassReason: null, args: { verifyOnly: true } }), 'run-deterministic');
 });
 
-test('sandboxEnv drops unreadable PATH entries and swaps in a throwaway HOME that keeps Claude auth but no Docker config', () => {
-  const links = [], copies = [];
-  const env = sandboxEnv({ PATH: '/usr/bin:/mnt/c/Windows:/opt/x', HOME: '/h' }, { readable: d => d === '/usr/bin' || d === '/opt/x', tmpHome: () => '/tmp/gh', link: (t, p) => links.push([t, p]), copy: (a, b) => copies.push([a, b]) });
-  assert.equal(env.PATH, '/usr/bin:/opt/x');
-  assert.equal(env.HOME, '/tmp/gh');
-  assert.deepEqual(links, [['/h/.claude', '/tmp/gh/.claude']]);
-  assert.deepEqual(copies, [['/h/.claude.json', '/tmp/gh/.claude.json']]);
-  assert.equal(env.DOCKER_CONFIG, '/tmp/gh/.docker-none');
+test('preDeterministicRoute: harness-only changes (no skill) still run the deterministic half', () => {
+  assert.equal(preDeterministicRoute({ scope: { skills: [], harness: true }, envSkip: false, bypassReason: null, args: {} }), 'run-deterministic');
 });
 
-test('harnessProblem names the machine-side cause and remedy instead of a silent zero', () => {
-  const j = { cases: [{ arms: { with: [{ error: 'A shell tool (Bash) was granted but this machine cannot confine it (no sandbox backend)' }] } }] };
-  assert.match(harnessProblem(j), /bubblewrap/);
-  assert.equal(harnessProblem({ cases: [{ arms: { with: [{ error: null, score: 1 }] } }] }), '');
+test('postDeterministicRoute: --verify-only always wins, spending nothing on eval/review', () => {
+  assert.deepEqual(postDeterministicRoute({ scope: { skills: ['a'], harness: false }, args: { verifyOnly: true }, envSkip: false, bypassReason: null }), { kind: 'verify-only' });
 });
 
-test('aggregateEvals requires every case to pass and reports the minimum score', () => {
-  const a = aggregateEvals([{ name: 'a', ok: true, exit: 0, score: 1, cases: [{ delta: 1 }] }, { name: 'b', ok: true, exit: 0, score: 0.9, cases: [{ delta: 0.5 }] }]);
-  assert.equal(a.ok, true); assert.equal(a.score, 0.9); assert.deepEqual(a.cases.map(c => c.delta), [1, 0.5]);
-  assert.equal(aggregateEvals([{ name: 'a', ok: true, exit: 0, score: 1 }, { name: 'b', ok: false, exit: 1, score: 0.4 }]).ok, false);
-  assert.equal(aggregateEvals([]).ok, false);
+test('postDeterministicRoute: no skill changed (harness-only) means nothing to gate agentically', () => {
+  assert.deepEqual(postDeterministicRoute({ scope: { skills: [], harness: true }, args: {}, envSkip: false, bypassReason: null }), { kind: 'harness-only' });
+});
+
+test('postDeterministicRoute: --no-agentic skips agentic without recording a bypass reason', () => {
+  assert.deepEqual(postDeterministicRoute({ scope: { skills: ['a'], harness: false }, args: { noAgentic: true }, envSkip: false, bypassReason: null }), { kind: 'deterministic-only', bypass: null });
+});
+
+test('postDeterministicRoute: an env-var skip with a reason records that reason as the bypass', () => {
+  assert.deepEqual(postDeterministicRoute({ scope: { skills: ['a'], harness: false }, args: {}, envSkip: true, bypassReason: 'harness broken' }), { kind: 'deterministic-only', bypass: 'harness broken' });
+});
+
+test('postDeterministicRoute: otherwise, a real skill change with no skip flag runs the agentic phase', () => {
+  assert.deepEqual(postDeterministicRoute({ scope: { skills: ['a'], harness: false }, args: {}, envSkip: false, bypassReason: null }), { kind: 'agentic' });
+});
+
+// --- Real-process check for the one bypass exit code that never touches attest.mjs/report.mjs or the
+// agentic half: SKILLS_GATE_SKIP_AGENTIC=1 alone must fail the whole run before spending anything.
+function misuseFixture() {
+  const root = mkdtempSync(join(tmpdir(), 'gate-misuse-'));
+  execFileSync('git', ['init', '-q'], { cwd: root });
+  execFileSync('git', ['config', 'user.email', 'a@b.c'], { cwd: root });
+  execFileSync('git', ['config', 'user.name', 'a'], { cwd: root });
+  mkdirSync(join(root, 'skills', 'dummy'), { recursive: true });
+  writeFileSync(join(root, 'skills', 'dummy', 'SKILL.md'), 'x');
+  writeFileSync(join(root, 'gate.config.json'), JSON.stringify({ threshold: 0.8, minDelta: 0.25, maxCostUsd: 5, reviewBudgetUsd: 2, evalModel: 'claude-sonnet-5', judgeModel: 'claude-haiku-4-5', reviewModel: 'claude-sonnet-5', maxAttestationAgeDays: 30, resultsKeep: 3 }));
+  mkdirSync(join(root, 'scripts', 'gate'), { recursive: true });
+  copyFileSync(GATE, join(root, 'scripts', 'gate.mjs'));
+  copyFileSync(join(ROOT, 'scripts', 'clean.mjs'), join(root, 'scripts', 'clean.mjs'));
+  for (const f of ['config.mjs', 'scope.mjs', 'eval.mjs', 'review.mjs', 'deterministic.mjs', 'ledger.mjs', 'verdict.mjs', 'agentic.mjs']) {
+    copyFileSync(join(ROOT, 'scripts', 'gate', f), join(root, 'scripts', 'gate', f));
+  }
+  execFileSync('git', ['add', '-A'], { cwd: root });
+  execFileSync('git', ['commit', '-q', '-m', 'init'], { cwd: root });
+  return root;
+}
+
+test('SKILLS_GATE_SKIP_AGENTIC=1 alone exits 1 before running any deterministic step (fails fast on the misuse, not on a missing plugin)', () => {
+  const root = misuseFixture();
+  let status = 0;
+  let out = '';
+  try {
+    out = execFileSync('node', [join(root, 'scripts', 'gate.mjs'), '--all'], { cwd: root, encoding: 'utf8', env: { ...process.env, SKILLS_GATE_SKIP_AGENTIC: '1' } });
+  } catch (err) {
+    status = err.status;
+    out = (err.stdout ?? '') + (err.stderr ?? '');
+  }
+  assert.equal(status, 1);
+  assert.match(out, /gate: FAIL agentic phase/);
+  assert.doesNotMatch(out, /^ok  lint/m, 'the misuse check must fail before lint ever runs');
+});
+
+
+test('gate.mjs hands runAgentic the same meta keys it destructures (a rename here crashed a real run after $9 of evals)', () => {
+  const agentic = readFileSync(new URL('../scripts/gate/agentic.mjs', import.meta.url), 'utf8');
+  const sig = agentic.match(/export async function runAgentic\(\{([^}]*)\}/)[1].split(',').map(s => s.trim());
+  for (const key of ['commit', 'claudeVersion', 'pluginVersion']) assert.ok(sig.includes(key), `runAgentic must destructure ${key}`);
+});
+
+test('--verify-only never writes evals/gate-report.json: a failing deterministic step in the hook must not clobber the tracked attestation', () => {
+  const src = readFileSync(new URL('../scripts/gate.mjs', import.meta.url), 'utf8');
+  assert.match(src, /const record = report => \{ if \(!args\.verifyOnly\) writeReportFile/);
+  const failBlocks = src.split('if (!det.ok) {')[1].split('}')[0];
+  assert.ok(failBlocks.includes('record('), 'deterministic failure path must go through record()');
+  assert.ok(!failBlocks.includes('writeReportFile('), 'deterministic failure path must not call writeReportFile directly');
+});
+
+test('the verify-only path hands attest the resolved base, never the raw --base string (a first push has no @{upstream})', () => {
+  const src = readFileSync(new URL('../scripts/gate.mjs', import.meta.url), 'utf8');
+  assert.match(src, /const base = resolveBase\(args\.base, createGit\(ROOT\)\)/);
+  assert.match(src, /attest\.verify\(ROOT, \{ base, /);
+  assert.doesNotMatch(src, /attest\.verify\(ROOT, \{ base: args\.base/);
 });
