@@ -1,0 +1,299 @@
+{
+ "schemaVersion": 1,
+ "claudeVersion": "2.1.269",
+ "startedAt": "2026-09-12T17:33:01.839Z",
+ "durationSeconds": 232,
+ "costUsd": 0.6749372,
+ "partial": false,
+ "suite": {
+  "ablation": "with-without",
+  "modelOverride": "claude-sonnet-5",
+  "judgeModel": "claude-haiku-4-5",
+  "caseFilter": "adds-a-csv-to-table-skill",
+  "threshold": 0.8,
+  "concurrency": 1,
+  "plugins": 1
+ },
+ "cases": [
+  {
+   "name": "adds-a-csv-to-table-skill",
+   "dir": "evals/skill-dev/adds-a-csv-to-table-skill",
+   "source": "mixed",
+   "promptMarkdown": "Add a new skill to this repository called csv-to-table that converts a CSV file into a\nGitHub-flavored markdown table. Put the conversion logic in\nskills/csv-to-table/scripts/convert.mjs with its test at\nskills/csv-to-table/scripts/convert.test.mjs, and an eval case at\nevals/csv-to-table/converts-a-simple-csv/ (including graders/skill-fired.md as the tool-use\nindicator, plus at least one grader that scores the outcome). Follow this repository's own\npractice for adding a skill end to end, and stop once the repository's gate command named in\nCLAUDE.md passes. End with a short final message listing every file you created.",
+   "runsPerCase": 1,
+   "timeoutSeconds": 900,
+   "maxTurns": 60,
+   "graders": [
+    {
+     "name": "eval-case-fixture-exists",
+     "type": "file_exists",
+     "weight": 1,
+     "config": {
+      "path": "evals/csv-to-table/converts-a-simple-csv/fixture.sh",
+      "exists": true
+     }
+    },
+    {
+     "name": "eval-case-skill-grader-exists",
+     "type": "file_exists",
+     "weight": 1,
+     "config": {
+      "path": "evals/csv-to-table/converts-a-simple-csv/graders/skill-fired.md",
+      "exists": true
+     }
+    },
+    {
+     "name": "eval-case-yaml-exists",
+     "type": "file_exists",
+     "weight": 1,
+     "config": {
+      "path": "evals/csv-to-table/converts-a-simple-csv/case.yaml",
+      "exists": true
+     }
+    },
+    {
+     "name": "script-test-exists",
+     "type": "file_exists",
+     "weight": 1,
+     "config": {
+      "path": "skills/csv-to-table/scripts/convert.test.mjs",
+      "exists": true
+     }
+    },
+    {
+     "name": "script-test-quality",
+     "type": "llm",
+     "weight": 1,
+     "graderMarkdown": "This is the test file for a script that converts CSV text into a GitHub-flavored markdown table.\nScore 1 only if the file imports the conversion function from its sibling script (a relative\nimport of ./convert.mjs or similar) and contains at least one real assertion that exercises the\nconversion — for example checking that a header row and a separator row appear, or that a comma\nin the input becomes a column boundary in the output. Score 0 if the file is empty, contains no\nassertions, never imports the script it claims to test, or only asserts something trivial that\nwould pass for any implementation (like \"the function exists\").",
+     "config": {
+      "criteria": "This is the test file for a script that converts CSV text into a GitHub-flavored markdown table.\nScore 1 only if the file imports the conversion function from its sibling script (a relative\nimport of ./convert.mjs or similar) and contains at least one real assertion that exercises the\nconversion — for example checking that a header row and a separator row appear, or that a comma\nin the input becomes a column boundary in the output. Score 0 if the file is empty, contains no\nassertions, never imports the script it claims to test, or only asserts something trivial that\nwould pass for any implementation (like \"the function exists\").",
+      "focus": {
+       "source": "file",
+       "path": "skills/csv-to-table/scripts/convert.test.mjs"
+      }
+     }
+    },
+    {
+     "name": "skill-fired",
+     "type": "tool_used",
+     "weight": 1,
+     "config": {
+      "tool": "Skill"
+     }
+    },
+    {
+     "name": "skill-md-exists",
+     "type": "file_exists",
+     "weight": 1,
+     "config": {
+      "path": "skills/csv-to-table/SKILL.md",
+      "exists": true
+     }
+    },
+    {
+     "name": "skill-md-quality",
+     "type": "llm",
+     "weight": 1,
+     "graderMarkdown": "This is a newly authored SKILL.md for a skill named csv-to-table. Score 1 only if all of the\nfollowing hold: the frontmatter `name` is exactly `csv-to-table` (matching its folder); the\nfrontmatter `description` is written in the third person and names a concrete trigger (mentions\nconverting a CSV, or producing a markdown table, or similar phrasing a user would actually type);\nthe frontmatter contains no `<` or `>` characters; the body is written as imperative instructions\nrather than descriptive prose about what an agent \"should\" do; and the whole file is well under\n500 lines. Score 0 if the name does not match the folder, the description could plausibly never\nfire or always fire, or the body is bloated with detail that belongs in a separate reference file.",
+     "config": {
+      "criteria": "This is a newly authored SKILL.md for a skill named csv-to-table. Score 1 only if all of the\nfollowing hold: the frontmatter `name` is exactly `csv-to-table` (matching its folder); the\nfrontmatter `description` is written in the third person and names a concrete trigger (mentions\nconverting a CSV, or producing a markdown table, or similar phrasing a user would actually type);\nthe frontmatter contains no `<` or `>` characters; the body is written as imperative instructions\nrather than descriptive prose about what an agent \"should\" do; and the whole file is well under\n500 lines. Score 0 if the name does not match the folder, the description could plausibly never\nfire or always fire, or the body is bloated with detail that belongs in a separate reference file.",
+      "focus": {
+       "source": "file",
+       "path": "skills/csv-to-table/SKILL.md"
+      }
+     }
+    }
+   ],
+   "arms": {
+    "with": [
+     {
+      "score": 1,
+      "passed": true,
+      "turns": 21,
+      "costUsd": 0.397363,
+      "judgeCostUsd": 0.003770999999999999,
+      "durationSeconds": 123,
+      "startedAt": "2026-09-12T17:33:01.883Z",
+      "error": null,
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "eval-case-fixture-exists",
+        "passed": true,
+        "weight": 1,
+        "explanation": "evals/csv-to-table/converts-a-simple-csv/fixture.sh exists as expected",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "eval-case-skill-grader-exists",
+        "passed": true,
+        "weight": 1,
+        "explanation": "evals/csv-to-table/converts-a-simple-csv/graders/skill-fired.md exists as expected",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "eval-case-yaml-exists",
+        "passed": true,
+        "weight": 1,
+        "explanation": "evals/csv-to-table/converts-a-simple-csv/case.yaml exists as expected",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "script-test-exists",
+        "passed": true,
+        "weight": 1,
+        "explanation": "skills/csv-to-table/scripts/convert.test.mjs exists as expected",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "script-test-quality",
+        "passed": true,
+        "weight": 1,
+        "explanation": "judge votes: PASS PASS PASS",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         true,
+         true,
+         true
+        ],
+        "evidence": "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { parseCsv, csvToMarkdownTable } from './convert.mjs';\n\ntest('parseCsv splits basic rows', () => {\n  assert.deepEqual(parseCsv('a,b,c\\n1,2,3'), [\n    ['a', 'b', 'c'],\n    ['1', '2', '3'],\n  ]);\n});\n\ntest('parseCsv handles quoted fields with commas and escaped quotes', () => {\n  assert.deepEqual(parseCsv('name,quote\\n\"Doe, Jane\",\"She said \"\"hi\"\"\"'), [\n    ['name', 'quote'],\n    ['Doe, Jane', 'She said \"hi\"'],\n  ]);\n});\n\ntest('csvToMarkdownTable renders a GitHub-flavored markdown table', () => {\n  const csv = 'name,age\\nAda,36\\nGrace,85';\n  const table = csvToMarkdownTable(csv);\n  assert.equal(\n    table,\n    ['| name | age |', '| --- | --- |', '| Ada | 36 |', '| Grace | 85 |'].join('\\n')\n  );\n});\n\ntest('csvToMarkdownTable escapes pipe characters in cells', () => {\n  const csv = 'a,b\\n1|2,3';\n  const table = csvToMarkdownTable(csv);\n  assert.equal(table, ['| a | b |', '| --- | --- |', '| 1\\\\|2 | 3 |'].join('\\n'));\n});\n\ntest('csvToMarkdownTable returns an empty string for empty input', () => {\n  assert.equal(csvToMarkdownTable(''), '');\n});\n"
+       },
+       {
+        "name": "skill-fired",
+        "passed": true,
+        "weight": 1,
+        "explanation": "Skill called 2x (expected 1..∞)",
+        "withOnly": true,
+        "scored": false
+       },
+       {
+        "name": "skill-md-exists",
+        "passed": true,
+        "weight": 1,
+        "explanation": "skills/csv-to-table/SKILL.md exists as expected",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "skill-md-quality",
+        "passed": true,
+        "weight": 1,
+        "explanation": "judge votes: PASS PASS PASS",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         true,
+         true,
+         true
+        ],
+        "evidence": "---\nname: csv-to-table\ndescription: Converts a CSV file into a GitHub-flavored markdown table. Use when the user asks to turn a CSV into a markdown table, render CSV data as a table, or wants CSV content pasted into a README, PR description, or doc as a table.\n---\n\n# CSV to table\n\nConvert a CSV file into a GitHub-flavored markdown table.\n\n## Steps\n\n1. Locate the input CSV file the user means (a path they gave, or the most recently discussed\n   CSV in the conversation).\n2. Run the converter:\n\n       node skills/csv-to-table/scripts/convert.mjs <path-to-csv>\n\n3. The script prints the markdown table to stdout. Write it to the destination the user asked\n   for, or include it directly in your reply if they didn't name one.\n\n## Notes\n\n- The first CSV row becomes the table header.\n- Quoted fields (`\"a, b\"`, `\"\"` for an escaped quote) are supported; embedded newlines inside a\n  quoted field are not.\n- Pipe characters in a cell are escaped (`\\|`) so they don't break the table's column syntax.\n"
+       }
+      ]
+     }
+    ],
+    "without": [
+     {
+      "score": 0.5714285714285714,
+      "passed": false,
+      "turns": 14,
+      "costUsd": 0.27757420000000005,
+      "judgeCostUsd": 0.0038519999999999987,
+      "durationSeconds": 108,
+      "startedAt": "2026-09-12T17:35:05.012Z",
+      "error": null,
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "eval-case-fixture-exists",
+        "passed": false,
+        "weight": 1,
+        "explanation": "evals/csv-to-table/converts-a-simple-csv/fixture.sh missing (expected present)",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "eval-case-skill-grader-exists",
+        "passed": true,
+        "weight": 1,
+        "explanation": "evals/csv-to-table/converts-a-simple-csv/graders/skill-fired.md exists as expected",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "eval-case-yaml-exists",
+        "passed": false,
+        "weight": 1,
+        "explanation": "evals/csv-to-table/converts-a-simple-csv/case.yaml missing (expected present)",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "script-test-exists",
+        "passed": true,
+        "weight": 1,
+        "explanation": "skills/csv-to-table/scripts/convert.test.mjs exists as expected",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "script-test-quality",
+        "passed": true,
+        "weight": 1,
+        "explanation": "judge votes: PASS PASS PASS",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         true,
+         true,
+         true
+        ],
+        "evidence": "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { csvToMarkdownTable, parseCsv } from './convert.mjs';\n\ntest('converts a simple csv into a markdown table', () => {\n  const csv = 'name,age\\nAda,36\\nGrace,85\\n';\n  const table = csvToMarkdownTable(csv);\n  assert.equal(\n    table,\n    ['| name | age |', '| --- | --- |', '| Ada | 36 |', '| Grace | 85 |'].join('\\n')\n  );\n});\n\ntest('handles quoted fields containing commas and doubled quotes', () => {\n  const csv = 'city,note\\n\"Springfield, IL\",\"Home of the \"\"Simpsons\"\"\"\\n';\n  const rows = parseCsv(csv);\n  assert.deepEqual(rows, [\n    ['city', 'note'],\n    ['Springfield, IL', 'Home of the \"Simpsons\"'],\n  ]);\n});\n\ntest('escapes pipe and backslash characters so the table does not break', () => {\n  const csv = 'a,b\\n1|2,c:\\\\d\\n';\n  const table = csvToMarkdownTable(csv);\n  const lines = table.split('\\n');\n  assert.equal(lines[2], '| 1\\\\|2 | c:\\\\\\\\d |');\n});\n\ntest('pads ragged rows to match the header width', () => {\n  const csv = 'a,b,c\\n1,2\\n3,4,5,6\\n';\n  const table = csvToMarkdownTable(csv);\n  const lines = table.split('\\n');\n  assert.equal(lines[2], '| 1 | 2 |  |');\n  assert.equal(lines[3], '| 3 | 4 | 5 |');\n});\n\ntest('returns an empty string for empty input', () => {\n  assert.equal(csvToMarkdownTable(''), '');\n});\n"
+       },
+       {
+        "name": "skill-md-exists",
+        "passed": true,
+        "weight": 1,
+        "explanation": "skills/csv-to-table/SKILL.md exists as expected",
+        "withOnly": false,
+        "scored": true
+       },
+       {
+        "name": "skill-md-quality",
+        "passed": false,
+        "weight": 1,
+        "explanation": "judge votes: PASS FAIL FAIL",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         true,
+         false,
+         false
+        ],
+        "evidence": "---\nname: csv-to-table\ndescription: Convert a CSV file into a GitHub-flavored markdown table. Use when the user asks to turn CSV data into a markdown table, paste CSV into a doc or README, or wants a quick markdown preview of tabular data.\n---\n\n# CSV to Table\n\nConverts CSV input into a GitHub-flavored markdown table.\n\n## Usage\n\nRun the conversion script with a path to a CSV file:\n\n    node skills/csv-to-table/scripts/convert.mjs path/to/data.csv\n\nThe script prints the markdown table to stdout. Redirect it to a file or paste it directly\ninto a markdown document.\n\n## Notes\n\n- The first row of the CSV is treated as the header row.\n- Fields containing `|`, `\\`, or newlines are escaped so the table renders correctly.\n- Quoted CSV fields (including embedded commas and doubled `\"\"` quotes) are supported.\n- Ragged rows are padded or truncated to match the header's column count.\n"
+       }
+      ]
+     }
+    ]
+   },
+   "aggregates": {
+    "score": 1,
+    "passRate": 1,
+    "scoreWithout": 0.5714285714285714,
+    "passRateWithout": 0,
+    "delta": 0.4285714285714286
+   }
+  }
+ ],
+ "aggregates": {
+  "casesTotal": 1,
+  "casesPassed": 1,
+  "overallScore": 1,
+  "overallPassRate": 1,
+  "meanDelta": 0.4285714285714286
+ }
+}

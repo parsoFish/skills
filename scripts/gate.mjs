@@ -5,7 +5,7 @@
 //   2 agentic (spends money, bounded): `claude plugin eval` on the changed skills' cases, then a
 //     headless structural review with a structured verdict
 // Usage: node scripts/gate.mjs [--base <ref>] [--all] [--force] [--no-agentic] [--no-review]
-//        [--verify-only] [--max-cost-usd N] [--eval-model M] [--judge-model M] [--review-model M]
+//        [--verify-only] [--reuse-evals] [--max-cost-usd N] [--eval-model M] [--judge-model M] [--review-model M]
 //        [--review-budget-usd N]
 // Exactly one verdict line, always: `gate: PASS (attested <digest12>)` exit 0 ·
 // `gate: DETERMINISTIC ONLY — not a merge gate` exit 0 · `gate: FAIL <step>` exit 1.
@@ -30,7 +30,7 @@ export function parseArgs(argv) {
   const flag = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
   return {
     all: has('--all'), force: has('--force'), noAgentic: has('--no-agentic'), noReview: has('--no-review'),
-    verifyOnly: has('--verify-only'), base: flag('--base'), maxCostUsd: flag('--max-cost-usd'),
+    verifyOnly: has('--verify-only'), reuseEvals: has('--reuse-evals'), base: flag('--base'), maxCostUsd: flag('--max-cost-usd'),
     evalModel: flag('--eval-model'), judgeModel: flag('--judge-model'), reviewModel: flag('--review-model'),
     reviewBudgetUsd: flag('--review-budget-usd'),
   };

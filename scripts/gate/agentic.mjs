@@ -5,7 +5,8 @@
 // (deterministic, --no-agentic, --verify-only) still run before those land.
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { caseNames, readEvalResult, aggregateEvals, harnessProblem, sandboxEnv } from './eval.mjs';
+import { caseNames, readEvalResult, aggregateEvals, harnessProblem, sandboxEnv, canReuseEval } from './eval.mjs';
+import { spawnSync } from 'node:child_process';
 import { runStructuralReview } from './review.mjs';
 import { appendLedgerLine } from './ledger.mjs';
 import { baseReport, evalSection, writeReportFile, printPass, printFail } from './verdict.mjs';
@@ -23,9 +24,26 @@ async function importReport() {
 
 /** Run one `claude plugin eval --case <name>` and read its result. `sh` is the caller's process
  * runner (real or stubbed in tests). */
-function runOneCase(root, c, { evalModel, judgeModel, cap, config, sh }) {
+function lastChangeEpoch(root, skill) {
+  const r = spawnSync('git', ['log', '-1', '--format=%ct', '--', `skills/${skill}`, `evals/${skill}`], { cwd: root, encoding: 'utf8' });
+  const n = Number((r.stdout ?? '').trim());
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEvals }) {
   const jsonPath = join(root, 'evals', `gate-eval-${c.name}.json`);
   const reportHtml = join(root, 'evals', 'results', `${c.name}.html`);
+  // Crash recovery (--reuse-evals): a result produced after the last commit that touched this
+  // skill's files is still evidence for this tree; the report records the reuse.
+  if (reuseEvals && existsSync(jsonPath)) {
+    try {
+      const j = JSON.parse(readFileSync(jsonPath, 'utf8'));
+      if (canReuseEval(j, lastChangeEpoch(root, c.skill))) {
+        const ev = readEvalResult(j, config);
+        return { result: { ...c, exit: 0, model: evalModel, judge: judgeModel, jsonPath, reused: true, ...ev }, harness: harnessProblem(j) };
+      }
+    } catch { /* fall through to a real run */ }
+  }
   // `claude plugin eval` filters cases by glob via --case; we still loop one case at a time for
   // per-case budget attribution and isolation, not because the flag only accepts a single name.
   const argv = ['plugin', 'eval', '.', '--trust-plugin', '--scaffold', '--allow-tools', 'Bash', 'Write', 'Edit',
@@ -44,7 +62,7 @@ function runOneCase(root, c, { evalModel, judgeModel, cap, config, sh }) {
   return { result: { ...c, exit: r.status, model: evalModel, judge: judgeModel, jsonPath, ...ev }, harness };
 }
 
-export async function runAgentic({ root, scope, config, args, det, sh, headCommit, claudeVersion, pluginVersion }) {
+export async function runAgentic({ root, scope, config, args, det, sh, commit, claudeVersion, pluginVersion }) {
   const attest = await importAttest();
   const skillsDigestNow = attest.skillsDigest(root);
   const harnessDigestNow = attest.harnessDigest(root);
@@ -60,20 +78,21 @@ export async function runAgentic({ root, scope, config, args, det, sh, headCommi
   const evalModel = args.evalModel ?? config.evalModel;
   const judgeModel = args.judgeModel ?? config.judgeModel;
   const cap = args.maxCostUsd ?? config.maxCostUsd;
-  const meta = { commit: headCommit, claudeVersion, pluginVersion };
+  const meta = { commit, claudeVersion, pluginVersion };
   const fail = (step, extra = {}) => { writeReportFile(root, { ...baseReport({ scope, steps: det.steps, ok: false, ...meta }), ...extra }); return printFail(step); };
 
   const cases = scope.skills.flatMap(s => caseNames(root, s).map(c => ({ skill: s, name: c })));
   const perCase = [];
   let harnessMsg = '';
   for (const c of cases) {
-    const { result, harness } = runOneCase(root, c, { evalModel, judgeModel, cap, config, sh });
+    const { result, harness } = runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEvals: args.reuseEvals === true });
     perCase.push(result);
     harnessMsg = harnessMsg || harness;
   }
   const agg = aggregateEvals(perCase);
   const evalOk = !harnessMsg && agg.ok;
-  console.log(`${evalOk ? 'ok  ' : 'FAIL'} claude plugin eval (${cases.length} case${cases.length === 1 ? '' : 's'}) — ${perCase.map(c => `${c.name} ${c.score ?? '?'}${c.delta != null ? ' Δ' + c.delta : ''}`).join(' · ')}`);
+  const reusedEvals = perCase.filter(c => c.reused).map(c => c.name);
+  console.log(`${evalOk ? 'ok  ' : 'FAIL'} claude plugin eval (${cases.length} case${cases.length === 1 ? '' : 's'}${reusedEvals.length ? `, ${reusedEvals.length} reused` : ''}) — ${perCase.map(c => `${c.name} ${c.score ?? '?'}${c.delta != null ? ' Δ' + c.delta : ''}${c.reused ? ' (reused)' : ''}`).join(' · ')}`);
 
   if (harnessMsg) return fail(`claude plugin eval — HARNESS: ${harnessMsg}`, { agenticRan: true, eval: evalSection(config, perCase) });
   if (!agg.ok) return fail('claude plugin eval', { agenticRan: true, eval: evalSection(config, perCase) });
@@ -99,7 +118,7 @@ export async function runAgentic({ root, scope, config, args, det, sh, headCommi
 
   const report = {
     ...baseReport({ scope, steps: det.steps, ok: true, ...meta }), agenticRan: true, attested,
-    eval: evalSection(config, perCase), review,
+    eval: evalSection(config, perCase), review, reusedEvals,
     totals: { costUsd: totalCostUsd, durationSeconds: totalDurationSeconds },
     skillsDigest, harnessDigest,
   };
@@ -110,7 +129,7 @@ export async function runAgentic({ root, scope, config, args, det, sh, headCommi
   appendLedgerLine(root, {
     date: report.generatedAt.slice(0, 10), commit7: report.commit.slice(0, 7), skills: scope.skills.join('+'),
     casesCount: perCase.length, costUsd: totalCostUsd, durationSeconds: totalDurationSeconds,
-    evalModel, judgeModel, verdict: 'PASS',
+    evalModel, judgeModel, verdict: reusedEvals.length ? `PASS (reused ${reusedEvals.length} eval result${reusedEvals.length === 1 ? '' : 's'})` : 'PASS',
   });
   clean(root);
   return printPass(skillsDigest.slice(0, 12));

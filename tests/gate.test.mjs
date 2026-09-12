@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { mkdtempSync, mkdirSync, writeFileSync, copyFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
@@ -99,3 +100,9 @@ test('SKILLS_GATE_SKIP_AGENTIC=1 alone exits 1 before running any deterministic 
   assert.doesNotMatch(out, /^ok  lint/m, 'the misuse check must fail before lint ever runs');
 });
 
+
+test('gate.mjs hands runAgentic the same meta keys it destructures (a rename here crashed a real run after $9 of evals)', () => {
+  const agentic = readFileSync(new URL('../scripts/gate/agentic.mjs', import.meta.url), 'utf8');
+  const sig = agentic.match(/export async function runAgentic\(\{([^}]*)\}/)[1].split(',').map(s => s.trim());
+  for (const key of ['commit', 'claudeVersion', 'pluginVersion']) assert.ok(sig.includes(key), `runAgentic must destructure ${key}`);
+});

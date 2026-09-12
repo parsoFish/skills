@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { caseNames, evalCoverage, readEvalResult, aggregateEvals, harnessProblem, sandboxEnv } from '../scripts/gate/eval.mjs';
+import { caseNames, evalCoverage, readEvalResult, aggregateEvals, harnessProblem, sandboxEnv, canReuseEval } from '../scripts/gate/eval.mjs';
 
 const CFG = { threshold: 0.8, minDelta: 0.25 };
 
@@ -104,4 +104,14 @@ test('sandboxEnv drops unreadable PATH entries and swaps in a throwaway HOME tha
   assert.deepEqual(links, [['/h/.claude', '/tmp/gh/.claude']]);
   assert.deepEqual(copies, [['/h/.claude.json', '/tmp/gh/.claude.json']]);
   assert.equal(env.DOCKER_CONFIG, '/tmp/gh/.docker-none');
+});
+
+test('canReuseEval: only a result started after the last change to the skill is reusable', () => {
+  const t = 1_700_000_000;
+  const at = epoch => new Date(epoch * 1000).toISOString();
+  assert.equal(canReuseEval({ startedAt: at(t + 60) }, t), true);
+  assert.equal(canReuseEval({ startedAt: at(t - 60) }, t), false);
+  assert.equal(canReuseEval({ startedAt: at(t + 60) }, null), false);
+  assert.equal(canReuseEval({}, t), false);
+  assert.equal(canReuseEval(null, t), false);
 });

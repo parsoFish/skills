@@ -96,3 +96,11 @@ export function sandboxEnv(env = process.env, fsApi = {
   }
   return { ...env, PATH: path, HOME: home, DOCKER_CONFIG: join(home, '.docker-none'), SKILLS_GATE_REAL_HOME: env.HOME ?? '' };
 }
+
+/** Pure: a stored `claude plugin eval` result may stand in for a fresh run only when it started after
+ * the last commit that touched the skill it tests (epoch seconds); no change time means never. */
+export function canReuseEval(json, lastChangeEpoch) {
+  if (!json || !json.startedAt || lastChangeEpoch == null) return false;
+  const started = Date.parse(json.startedAt);
+  return Number.isFinite(started) && started / 1000 > lastChangeEpoch;
+}

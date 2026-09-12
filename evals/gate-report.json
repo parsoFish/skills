@@ -1,6 +1,24 @@
 {
+ "schema": 2,
+ "ok": true,
+ "attested": true,
+ "agenticRan": true,
+ "bypass": null,
+ "generatedAt": "2026-09-12T17:38:17.267Z",
+ "claudeVersion": "2.1.269",
+ "pluginVersion": "0.2.0",
+ "scope": {
+  "skills": [
+   "architecture",
+   "eval-authoring",
+   "skill-dev"
+  ],
+  "harness": true
+ },
  "changed": [
-  "architecture"
+  "architecture",
+  "eval-authoring",
+  "skill-dev"
  ],
  "steps": [
   {
@@ -29,40 +47,108 @@
    "detail": ""
   },
   {
-   "name": "claude plugin eval (3 cases)",
+   "name": "skill-creator quick_validate eval-authoring",
    "ok": true,
-   "detail": "document-a-terraform-repo 1 Δ1 · document-a-ts-monorepo 1 Δ1 · drift-catches-a-new-edge 1 Δ0.5"
+   "detail": "Skill is valid!"
   },
   {
-   "name": "structural review architecture",
+   "name": "eval case with Skill grader eval-authoring",
    "ok": true,
-   "detail": "pass: no findings"
+   "detail": ""
+  },
+  {
+   "name": "skill-creator quick_validate skill-dev",
+   "ok": true,
+   "detail": "Skill is valid!"
+  },
+  {
+   "name": "eval case with Skill grader skill-dev",
+   "ok": true,
+   "detail": ""
   }
  ],
- "ok": true,
- "contentHash": "4cf6a768296ebb44a1e29e8f179550d8d6c0255803c14252e0cc4c15ec5795e4",
- "agenticRan": true,
  "eval": {
-  "ok": true,
-  "score": 1,
   "threshold": 0.8,
+  "minDelta": 0.25,
   "cases": [
    {
     "name": "document-a-terraform-repo",
+    "skill": "architecture",
+    "model": "claude-sonnet-5",
+    "judge": "claude-haiku-4-5",
+    "evidence": "evals/attest/document-a-terraform-repo.json",
     "score": 1,
+    "scoreWithout": 0,
     "delta": 1,
+    "partial": false,
+    "errors": [],
+    "turns": 88,
+    "costUsd": 2.0592141999999996,
+    "durationSeconds": 735,
     "exit": 0
    },
    {
     "name": "document-a-ts-monorepo",
+    "skill": "architecture",
+    "model": "claude-sonnet-5",
+    "judge": "claude-haiku-4-5",
+    "evidence": "evals/attest/document-a-ts-monorepo.json",
     "score": 1,
+    "scoreWithout": 0,
     "delta": 1,
+    "partial": false,
+    "errors": [],
+    "turns": 93,
+    "costUsd": 2.1035097999999994,
+    "durationSeconds": 713,
     "exit": 0
    },
    {
     "name": "drift-catches-a-new-edge",
+    "skill": "architecture",
+    "model": "claude-sonnet-5",
+    "judge": "claude-haiku-4-5",
+    "evidence": "evals/attest/drift-catches-a-new-edge.json",
     "score": 1,
-    "delta": 0.5,
+    "scoreWithout": 0,
+    "delta": 1,
+    "partial": false,
+    "errors": [],
+    "turns": 13,
+    "costUsd": 0.420957,
+    "durationSeconds": 118,
+    "exit": 0
+   },
+   {
+    "name": "writes-a-case-for-changelog-line",
+    "skill": "eval-authoring",
+    "model": "claude-sonnet-5",
+    "judge": "claude-haiku-4-5",
+    "evidence": "evals/attest/writes-a-case-for-changelog-line.json",
+    "score": 1,
+    "scoreWithout": 0.6666666666666666,
+    "delta": 0.33333333333333337,
+    "partial": false,
+    "errors": [],
+    "turns": 23,
+    "costUsd": 0.5088092,
+    "durationSeconds": 214,
+    "exit": 0
+   },
+   {
+    "name": "adds-a-csv-to-table-skill",
+    "skill": "skill-dev",
+    "model": "claude-sonnet-5",
+    "judge": "claude-haiku-4-5",
+    "evidence": "evals/attest/adds-a-csv-to-table-skill.json",
+    "score": 1,
+    "scoreWithout": 0.5714285714285714,
+    "delta": 0.4285714285714286,
+    "partial": false,
+    "errors": [],
+    "turns": 21,
+    "costUsd": 0.6749372,
+    "durationSeconds": 232,
     "exit": 0
    }
   ]
@@ -70,7 +156,33 @@
  "review": {
   "architecture": {
    "verdict": "pass",
-   "findings": []
+   "findings": [],
+   "costUsd": 0.28092079999999997
+  },
+  "eval-authoring": {
+   "verdict": "pass",
+   "findings": [],
+   "costUsd": 0.0909284
+  },
+  "skill-dev": {
+   "verdict": "pass",
+   "findings": [
+    {
+     "severity": "minor",
+     "finding": "Body prose is discursive/explanatory in places (e.g. rationale clauses like 'because skipping it was tried and found expensive') rather than strictly terse imperative instructions. Headers and key directives are imperative, so this doesn't block firing or comprehension, but it adds token cost beyond what pure step commands would need."
+    },
+    {
+     "severity": "minor",
+     "finding": "The skill has no scripts/, references/, or assets/ subdirectories — it's pure process guidance at 111 lines, well under the 500-line cap, so progressive disclosure isn't exercised. Not a defect (no content currently needs offloading), but worth watching if the body grows."
+    }
+   ],
+   "costUsd": 0.126213
   }
- }
+ },
+ "totals": {
+  "costUsd": 6.265489599999999,
+  "durationSeconds": 2012
+ },
+ "skillsDigest": "d701aa223cf93ae9602f03d9dc521361f5c46ec8bdb680f753a43d915057892f",
+ "harnessDigest": "0baa01a9604f421affdc819db08c02687c77cd5327fa6b65d071f85fd741fefc"
 }

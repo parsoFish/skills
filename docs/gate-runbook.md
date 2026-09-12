@@ -65,6 +65,8 @@ grader or its delta is structurally 0.
 
 ## claude plugin eval
 
+**Crash recovery.** If the gate died after the cases ran (a bug in the gate itself, a killed process), re-run with `node scripts/gate.mjs --all --force --reuse-evals`: a case whose `evals/gate-eval-<case>.json` started after the last commit touching that skill is reused instead of re-bought, the structural reviews run again, and the report records `reusedEvals`.
+
 **What it means:** the agentic half ran but a case failed, or the harness itself failed before the
 first turn. **Why it fires, case failure:** `score < threshold`, `delta < minDelta`, `partial ===
 true`, or an arm errored (`gate.config.json` holds the thresholds — nothing is hardcoded). Read the
