@@ -152,7 +152,8 @@ function main() {
 
 function finish(report) {
   const out = flag('--json', join(ROOT, 'evals', 'gate-report.json'));
-  mkdirSync(dirname(out), { recursive: true }); writeFileSync(out, JSON.stringify(report, null, 1) + '\n');
+  // a cached pass keeps the original full record on disk instead of overwriting it with the summary of a skipped run
+  if (!report.cached) { mkdirSync(dirname(out), { recursive: true }); writeFileSync(out, JSON.stringify(report, null, 1) + '\n'); }
   console.log(report.ok ? `gate: PASS (${report.changed.length} skill(s))` : 'gate: FAIL');
   process.exitCode = report.ok ? 0 : 1;
 }
