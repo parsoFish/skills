@@ -4,11 +4,11 @@
 | field | value |
 | --- | --- |
 | skillsDigest | `d701aa223cf9` |
-| commit | `8c85436dfa88fb4972cb3726b1d299c774830cb3` |
-| generatedAt | 2026-09-12T17:52:20.201Z |
+| commit | `0c6979227a67bd4312752461612db1283499377d` |
+| generatedAt | 2026-09-12T18:02:11.322Z |
 | claudeVersion | 2.1.269 |
 | pluginVersion | 0.2.0 |
-| total cost | $6.25 |
+| total cost | $6.26 |
 | total duration | 33.5 min |
 
 ## Deterministic steps
@@ -94,9 +94,9 @@
 
 | skill | verdict | findings | cost |
 | --- | --- | --- | --- |
-| architecture | pass | none | $0.25 |
-| eval-authoring | pass | none | $0.14 |
-| skill-dev | pass | none | $0.09 |
+| architecture | pass | none | $0.29 |
+| eval-authoring | pass | none | $0.10 |
+| skill-dev | pass | none | $0.11 |
 
 ## Re-run
 
@@ -115,5 +115,7 @@ setsid nohup node scripts/gate.mjs --all --force > /tmp/gate.log 2>&1 &
 ## Recent ledger
 
 ```
-_no ledger entries yet_
+| date | commit | skills | cases | cost | duration | models | verdict |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-09-12 | 8c85436 | architecture+eval-authoring+skill-dev | 5 cases | $6.25 | 33.5 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |
 ```
