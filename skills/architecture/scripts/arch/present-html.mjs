@@ -47,9 +47,14 @@ function mermaidClassDefPreamble() {
   return Object.entries(KIND_COLORS).map(([kind, hex]) => `classDef ${kind} fill:${paleOnLight(hex)},stroke:${hex},color:${inkOnPale(hex)}`).join('\n');
 }
 
-/** Prepend the classDef preamble inside every ```mermaid fence in `markdown`, once per fence. */
+/**
+ * Insert the classDef preamble inside every ```mermaid fence in `markdown`, right after the
+ * diagram-type declaration (`flowchart LR`, `graph TD`, `sequenceDiagram`, …) on the fence's first
+ * line — Mermaid requires that declaration to be the very first line, so the preamble cannot be
+ * prepended before it without breaking every diagram it touches.
+ */
 export function injectClassDefs(markdown, preamble = mermaidClassDefPreamble()) {
-  return String(markdown ?? '').replace(/(```mermaid\r?\n)/g, `$1${preamble}\n`);
+  return String(markdown ?? '').replace(/(```mermaid\r?\n)([^\r\n]*\r?\n)/g, `$1$2${preamble}\n`);
 }
 
 function pngDataUri(pngPath) {

@@ -73,17 +73,25 @@ test('bundleHtml never lists a .c4 or .json path, even if the caller passes one'
   assert.match(html, /deps\.md/);
 });
 
-test('injectClassDefs prepends the classDef preamble inside a mermaid fence', () => {
-  const md = 'before\n\n```mermaid\ngraph TD; a-->b;\n```\n\nafter';
+test('injectClassDefs inserts the classDef preamble right after the diagram-type line, never before it', () => {
+  const md = 'before\n\n```mermaid\nflowchart LR\n  a-->b\n```\n\nafter';
   const out = injectClassDefs(md, 'classDef human fill:#eee,stroke:#333,color:#111');
-  assert.match(out, /```mermaid\nclassDef human fill:#eee,stroke:#333,color:#111\ngraph TD; a-->b;\n```/);
+  // Mermaid requires the type declaration (`flowchart LR`) to stay the fence's first line —
+  // a classDef line ahead of it would break every diagram it touches.
+  assert.match(out, /```mermaid\nflowchart LR\nclassDef human fill:#eee,stroke:#333,color:#111\n  a-->b\n```/);
 });
 
-test('bundleHtml injects the house classDef preamble into an embedded mermaid fence', () => {
+test('injectClassDefs still lands after a single-line diagram that declares its type and content together', () => {
+  const md = '```mermaid\ngraph TD; a-->b;\n```';
+  const out = injectClassDefs(md, 'classDef human fill:#eee,stroke:#333,color:#111');
+  assert.match(out, /```mermaid\ngraph TD; a-->b;\nclassDef human fill:#eee,stroke:#333,color:#111\n```/);
+});
+
+test('bundleHtml injects the house classDef preamble into an embedded mermaid fence, after the diagram-type line', () => {
   const html = bundleHtml(baseInput({
-    written: [{ path: 'docs/architecture/loop.md', markdown: '# Loop\n\n```mermaid\ngraph TD; a-->b;\n```\n' }],
+    written: [{ path: 'docs/architecture/loop.md', markdown: '# Loop\n\n```mermaid\nflowchart LR\n  a-->b\n```\n' }],
   }));
-  assert.match(html, /```mermaid\nclassDef human fill:/);
+  assert.match(html, /```mermaid\nflowchart LR\nclassDef human fill:/);
   assert.match(html, /classDef webui fill:/);
   assert.match(html, /classDef modelapi fill:/);
 });

@@ -107,7 +107,7 @@ export function check(docsRoot, { cap = 400, retired = [], root, sha } = {}) {
   results.push({ id: 'docs.no-blank-checklist', ok: !!cl && blank.length === 0, detail: cl ? blank : ['CHECKLIST.md missing'] });
   results.push({ id: 'docs.checklist-complete', ok: !!cl && missing.length === 0, detail: cl ? missing : ['CHECKLIST.md missing'] });
   const hits = [];
-  if (retired.length) { const re = new RegExp(`\\b(${retired.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`, 'i'); for (const p of files) if (re.test(readFileSync(p, 'utf8'))) hits.push(relative(docsRoot, p)); }
+  if (retired.length) { const re = new RegExp(`\\b(${retired.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`, 'i'); for (const p of files) if (!/\/decisions\//.test(p) && re.test(readFileSync(p, 'utf8'))) hits.push(relative(docsRoot, p)); }
   results.push({ id: 'naming.retired', ok: hits.length === 0, detail: hits });
   const cited = checkCitedPaths(written, docsRoot, root);
   results.push({ id: 'docs.cited-paths-exist', ...cited });

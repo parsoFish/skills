@@ -61,7 +61,7 @@ export function render({ modelDir, outDir, exec = defaultExec, theme = 'light', 
   const validated = exec('npx', ['--yes', LIKEC4, 'validate', modelDir]);
   if (validated.status !== 0) fail('validate', validated);
 
-  const exported = exec('npx', ['--yes', LIKEC4, 'export', 'png', modelDir, '-o', outDir, '--theme', theme, '--flat', '--ignore']);
+  const exported = exec('npx', ['--yes', LIKEC4, 'export', 'png', modelDir, '-o', outDir, '--theme', theme, '--flat', '--ignore', '--notation']);
   if (exported.status !== 0) fail('export png', exported);
 
   let postprocessed = false;

@@ -154,8 +154,10 @@ export function seedHandC4(components, opts = {}) {
   const extLines = externals.map(e => `  ${e.elementKind} ${e.id} ${q(e.title)}`);
   const modelBlock = ['model {', ...extLines, '', ...systemRelLines(sysId, externals), '}'].join('\n');
 
-  const top = [...(components?.nodes ?? [])]
-    .sort((a, b) => (b.files ?? 0) - (a.files ?? 0) || a.id.localeCompare(b.id))
+  const kindOf = n => kinds[n.id] ?? inferKind(n.id);
+  const distinct = [...(components?.nodes ?? [])].filter(n => kindOf(n) !== 'service');
+  const bySize = [...(components?.nodes ?? [])].sort((a, b) => (b.files ?? 0) - (a.files ?? 0) || a.id.localeCompare(b.id));
+  const top = [...new Map([...distinct, ...bySize].map(n => [n.id, n])).values()]
     .slice(0, 8)
     .map(n => `${sysId}.${sanitizeId(n.id)}`);
 
