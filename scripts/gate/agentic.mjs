@@ -30,19 +30,26 @@ function lastChangeEpoch(root, skill) {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+/** Pure over the filesystem: where a reusable result for this case may live, most raw first. */
+export function reuseCandidates(root, caseName) {
+  return [join(root, 'evals', `gate-eval-${caseName}.json`), join(root, 'evals', 'attest', `${caseName}.json`)].filter(existsSync);
+}
+
 function runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEvals }) {
   const jsonPath = join(root, 'evals', `gate-eval-${c.name}.json`);
   const reportHtml = join(root, 'evals', 'results', `${c.name}.html`);
   // Crash recovery (--reuse-evals): a result produced after the last commit that touched this
-  // skill's files is still evidence for this tree; the report records the reuse.
-  if (reuseEvals && existsSync(jsonPath)) {
-    try {
-      const j = JSON.parse(readFileSync(jsonPath, 'utf8'));
-      if (canReuseEval(j, lastChangeEpoch(root, c.skill))) {
+  // skill's files is still evidence for this tree; the report records the reuse. The raw per-case
+  // JSON is pruned by clean after a pass, so the tracked evidence copy is the second candidate.
+  if (reuseEvals) {
+    for (const candidate of reuseCandidates(root, c.name)) {
+      try {
+        const j = JSON.parse(readFileSync(candidate, 'utf8'));
+        if (!canReuseEval(j, lastChangeEpoch(root, c.skill))) continue;
         const ev = readEvalResult(j, config);
-        return { result: { ...c, exit: 0, model: evalModel, judge: judgeModel, jsonPath, reused: true, ...ev }, harness: harnessProblem(j) };
-      }
-    } catch { /* fall through to a real run */ }
+        return { result: { ...c, exit: 0, model: evalModel, judge: judgeModel, jsonPath: candidate, reused: true, ...ev }, harness: harnessProblem(j) };
+      } catch { /* try the next candidate, then a real run */ }
+    }
   }
   // `claude plugin eval` filters cases by glob via --case; we still loop one case at a time for
   // per-case budget attribution and isolation, not because the flag only accepts a single name.

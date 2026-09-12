@@ -115,3 +115,14 @@ test('canReuseEval: only a result started after the last change to the skill is 
   assert.equal(canReuseEval({}, t), false);
   assert.equal(canReuseEval(null, t), false);
 });
+
+test('reuseCandidates lists the raw per-case JSON first and the tracked evidence copy second, only when present', async () => {
+  const { reuseCandidates } = await import('../scripts/gate/agentic.mjs');
+  const root = mkdtempSync(join(tmpdir(), 'reuse-'));
+  mkdirSync(join(root, 'evals', 'attest'), { recursive: true });
+  assert.deepEqual(reuseCandidates(root, 'c'), []);
+  writeFileSync(join(root, 'evals', 'attest', 'c.json'), '{}');
+  assert.deepEqual(reuseCandidates(root, 'c'), [join(root, 'evals', 'attest', 'c.json')]);
+  writeFileSync(join(root, 'evals', 'gate-eval-c.json'), '{}');
+  assert.deepEqual(reuseCandidates(root, 'c'), [join(root, 'evals', 'gate-eval-c.json'), join(root, 'evals', 'attest', 'c.json')]);
+});
