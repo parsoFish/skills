@@ -9,7 +9,7 @@ test('terraform repo is iac', () => {
   assert.deepEqual(r.kinds, ['iac']);
 });
 test('node cli with bin is cli', () => {
-  const r = classify('/x', fakeFs({ 'package.json': JSON.stringify({ bin: { mdtoc: 'x.js' } }) }));
+  const r = classify('/x', fakeFs({ 'package.json': JSON.stringify({ bin: { mytool: 'x.js' } }) }));
   assert.deepEqual(r.kinds, ['cli']); assert.equal(r.ambiguous, false);
 });
 test('next + ws monorepo is service, flagged ambiguous when also plugin host', () => {

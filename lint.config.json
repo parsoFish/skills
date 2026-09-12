@@ -1,0 +1,4 @@
+{
+  "forbiddenTerms": ["forge", "gitweave", "betterado", "mdtoc", "gitpulse", "trafficgame", "dj-lights", "linearb", "parso", "parsonson"],
+  "scan": ["skills", "evals"]
+}

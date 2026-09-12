@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { lintSkill, parseFrontmatter, LIMITS } from '../scripts/lint-skills.mjs';
+import { lintSkill, lintForbidden, parseFrontmatter, LIMITS } from '../scripts/lint-skills.mjs';
 
 function skill(name, fm, body = '# x\n') {
   const root = mkdtempSync(join(tmpdir(), 'skill-'));
@@ -44,4 +44,14 @@ test('SKILL.md line cap enforced', () => {
 test('broken relative links reported', () => {
   const dir = skill('s', 'name: s\ndescription: Use when needed.', 'see [ref](references/missing.md)\n');
   assert.ok(lintSkill(dir).some(e => e.includes('broken link')));
+});
+
+test('forbidden terms are reported with file and line, case-insensitive', () => {
+  const root = mkdtempSync(join(tmpdir(), 'repo-'));
+  mkdirSync(join(root, 'skills', 's'), { recursive: true });
+  writeFileSync(join(root, 'skills', 's', 'SKILL.md'), '---\nname: s\ndescription: Use when needed.\n---\nWorks great on Acme Corp repos.\n');
+  const errs = lintForbidden(root, { forbiddenTerms: ['acme corp'], scan: ['skills'] });
+  assert.equal(errs.length, 1);
+  assert.match(errs[0], /skills\/s\/SKILL.md:5: forbidden term "Acme Corp"/);
+  assert.deepEqual(lintForbidden(root, { forbiddenTerms: [] }), []);
 });

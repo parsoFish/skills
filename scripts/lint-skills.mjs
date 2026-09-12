@@ -55,6 +55,22 @@ export function lintSkill(dir) {
   return errors;
 }
 
+export function walk(dir, out = []) { if (!existsSync(dir)) return out; for (const f of readdirSync(dir)) { const p = join(dir, f); statSync(p).isDirectory() ? walk(p, out) : out.push(p); } return out; }
+
+/** Skills must not be tied to their author: forbidden terms (from lint.config.json) may not appear in skill or eval files. */
+export function lintForbidden(root, config) {
+  const terms = (config?.forbiddenTerms ?? []).map(t => t.toLowerCase());
+  if (!terms.length) return [];
+  const re = new RegExp(`(${terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'i');
+  const errors = [];
+  for (const dir of config.scan ?? ['skills', 'evals']) for (const f of walk(join(root, dir))) {
+    if (!/\.(md|json|c4|mjs|js|ts|yaml|yml|txt)$/.test(f)) continue;
+    const lines = readFileSync(f, 'utf8').split(/\r?\n/);
+    lines.forEach((l, i) => { const m = l.match(re); if (m) errors.push(`${f.slice(root.length + 1)}:${i + 1}: forbidden term "${m[1]}" (skills must not reference the author's own projects)`); });
+  }
+  return errors;
+}
+
 export function lintAll(root) {
   const skillsDir = join(root, 'skills');
   const errors = [];
@@ -62,6 +78,8 @@ export function lintAll(root) {
     const p = join(skillsDir, d);
     if (statSync(p).isDirectory()) errors.push(...lintSkill(p));
   }
+  const cfgPath = join(root, 'lint.config.json');
+  if (existsSync(cfgPath)) errors.push(...lintForbidden(root, JSON.parse(readFileSync(cfgPath, 'utf8'))));
   return errors;
 }
 
