@@ -46,6 +46,7 @@ jobs:
         env: { ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }} }
         run: |
           test -n "$ANTHROPIC_API_KEY" || { echo "ANTHROPIC_API_KEY secret missing: the agentic gate cannot run and a skill change must not merge without it"; exit 1; }
+          sudo apt-get update -qq && sudo apt-get install -y -qq bubblewrap socat   # sandbox backend for Bash-granting evals
           pip install pyyaml
           npm install -g @anthropic-ai/claude-code
           claude plugin marketplace add anthropics/skills || true

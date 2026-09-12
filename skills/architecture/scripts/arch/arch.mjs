@@ -16,6 +16,7 @@ import { extractApi } from './extract-api.mjs';
 import { extractTests } from './extract-tests.mjs';
 import { extractEnv } from './extract-env.mjs';
 import { extractUi } from './extract-ui.mjs';
+import { extractImports } from './extract-imports.mjs';
 import { toMarkdown } from './markdown.mjs';
 import { specC4, generatedC4, seedHandC4 } from './model.mjs';
 import { render } from './render.mjs';
@@ -53,13 +54,19 @@ export function loadRules() {
   return JSON.parse(readFileSync(existsSync(p) ? p : join(here, 'fold-rules.default.json'), 'utf8'));
 }
 
+/** engine: 'builtin' (default — offline, zero deps, relative imports only) or 'dependency-cruiser' (opt-in in fold-rules; resolves tsconfig paths and package entry points via npx). */
 export function extractComponents(rules) {
-  const argv = ['--yes', '-p', 'dependency-cruiser@18', 'depcruise', '--no-config', '--output-type', 'json'];
-  if (rules.tsConfig) argv.push('--ts-config');
-  argv.push('--include-only', rules.include ?? '^(src|apps|packages|lib)', ...(rules.roots ?? ['.']));
-  const json = execFileSync('npx', argv, { cwd: root, maxBuffer: 1 << 28, stdio: ['ignore', 'pipe', 'pipe'] }).toString();
-  const g = fold(JSON.parse(json), rules.rules);
-  return { ...g, cycles: cycles(g) };
+  let dc;
+  if (rules.engine === 'dependency-cruiser') {
+    const argv = ['--yes', '-p', 'dependency-cruiser@18', 'depcruise', '--no-config', '--output-type', 'json'];
+    if (rules.tsConfig) argv.push('--ts-config');
+    argv.push('--include-only', rules.include ?? '^(src|apps|packages|lib)', ...(rules.roots ?? ['.']));
+    dc = JSON.parse(execFileSync('npx', argv, { cwd: root, maxBuffer: 1 << 28, stdio: ['ignore', 'pipe', 'pipe'] }).toString());
+  } else {
+    dc = extractImports(root, { ignore: rules.scanIgnore ?? [], include: rules.include ?? '^(src|apps|packages|lib)' });
+  }
+  const g = fold(dc, rules.rules);
+  return { ...g, cycles: cycles(g), engine: rules.engine === 'dependency-cruiser' ? 'dependency-cruiser' : 'builtin-imports' };
 }
 
 /** Relationships declared in hand.c4: `a -> b 'title'`, `sys.a -[kind]-> sys.b 'title'`. runtime = kind runtime or "(runtime)" in title. */

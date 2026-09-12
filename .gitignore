@@ -1,9 +1,9 @@
-node_modules/
-evals/results.json
-evals/**/runs/
+
 *.log
 .DS_Store
 /tmp/
+evals/**/runs/
 evals/gate-eval.json
-
+evals/results.json
 evals/results/
+node_modules/

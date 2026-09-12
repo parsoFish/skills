@@ -4,9 +4,10 @@
 //   2 agentic (spends money, bounded): `claude plugin eval` on the changed skills' cases, then a headless structural review with a structured verdict
 // Usage: node scripts/gate.mjs [--base <ref>] [--all] [--no-agentic] [--no-review] [--max-cost-usd 5] [--json <path>]
 import { spawnSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync, statSync, mkdtempSync, symlinkSync, copyFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -56,6 +57,18 @@ export function cachedPass(reportPath, hash) {
   try { const r = JSON.parse(readFileSync(reportPath, 'utf8')); return r.ok === true && r.agenticRan === true && r.contentHash === hash ? r : null; } catch { return null; }
 }
 
+/** Pure: a run error that means the machine, not the skill, failed — surfaced with the remedy instead of a silent score 0. */
+export function harnessProblem(json) {
+  const errs = (json?.cases ?? []).flatMap(c => Object.values(c.arms ?? {}).flat()).map(r => r?.error).filter(Boolean);
+  if (!errs.length) return '';
+  const e = String(errs[0]);
+  if (/cannot confine|no sandbox backend/i.test(e)) return 'no sandbox backend for Bash-granting evals — install bubblewrap and socat (Debian/Ubuntu/WSL: sudo apt-get install -y bubblewrap socat) and re-run';
+  if (/keychain credential helpers|PATH directory/i.test(e)) return 'unreadable PATH entries block the sandbox — the gate already sanitises PATH; check SKILLS_GATE_REAL_HOME';
+  if (/Docker .*credential store/i.test(e)) return 'Docker credential store symlinks block the sandbox — the gate already swaps HOME; check ~/.docker';
+  if (/Not logged in/i.test(e)) return 'Claude is not logged in under the gate HOME — run `claude /login` and re-run';
+  return `every run errored before the first turn: ${e.slice(0, 160)}`;
+}
+
 export function locateQuickValidate() {
   const home = process.env.HOME ?? '';
   const candidates = [
@@ -69,6 +82,15 @@ export function locateQuickValidate() {
 const LEAN_FLAGS = (process.env.SKILLS_GATE_LEAN_FLAGS ?? '--setting-sources project --disable-slash-commands --strict-mcp-config --no-session-persistence').split(' ').filter(Boolean);
 
 function sh(cmd, argv, opts = {}) { const r = spawnSync(cmd, argv, { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 26, ...opts }); return { status: r.status ?? 1, out: (r.stdout ?? '') + (r.stderr ?? '') }; }
+
+/** The eval's Bash sandbox refuses to start when PATH holds unreadable dirs (WSL Windows mounts, plugin bin dirs) or when the Docker credential store contains symlinks. Give it a clean environment. */
+export function sandboxEnv(env = process.env, fsApi = { readable: d => { try { readdirSync(d); return statSync(d).isDirectory(); } catch { return false; } }, tmpHome: () => mkdtempSync(join(tmpdir(), 'gate-home-')), link: (t, p) => symlinkSync(t, p), copy: (a, b) => { try { copyFileSync(a, b); } catch {} } }) {
+  const path = (env.PATH ?? '').split(':').filter(d => d && fsApi.readable(d)).join(':');
+  // A throwaway HOME keeps Claude's auth (symlinked ~/.claude, copied ~/.claude.json) but hides ~/.docker, whose symlinks the sandbox rejects.
+  const home = fsApi.tmpHome();
+  if (env.HOME) { fsApi.link(join(env.HOME, '.claude'), join(home, '.claude')); fsApi.copy(join(env.HOME, '.claude.json'), join(home, '.claude.json')); }
+  return { ...env, PATH: path, HOME: home, DOCKER_CONFIG: join(home, '.docker-none'), SKILLS_GATE_REAL_HOME: env.HOME ?? '' };
+}
 
 function main() {
   const report = { changed: [], steps: [], ok: true };
@@ -106,10 +128,12 @@ function main() {
   const cap = flag('--max-cost-usd', '5');
   const jsonPath = join(ROOT, 'evals', 'gate-eval.json');
   const evalModel = flag('--eval-model', 'claude-sonnet-5'); const judge = flag('--judge-model', 'claude-haiku-4-5');
-  const argv = ['plugin', 'eval', '.', '--trust-plugin', '--json', jsonPath, '--threshold', '0.8', '--max-cost-usd', cap, '--no-publish', '--model', evalModel, '--judge-model', judge, ...changed.flatMap(s => caseNames(ROOT, s)).flatMap(c => ['--case', c])];
-  r = sh('claude', argv);
+  const argv = ['plugin', 'eval', '.', '--trust-plugin', '--scaffold', '--allow-tools', 'Bash', 'Write', 'Edit', '--json', jsonPath, '--threshold', '0.8', '--max-cost-usd', cap, '--no-publish', '--model', evalModel, '--judge-model', judge, ...changed.flatMap(s => caseNames(ROOT, s)).flatMap(c => ['--case', c])];
+  r = sh('claude', argv, { env: sandboxEnv() });
   let ev = { ok: false, score: null };
-  try { ev = readEvalResult(JSON.parse(readFileSync(jsonPath, 'utf8'))); } catch {}
+  let harness = '';
+  try { const j = JSON.parse(readFileSync(jsonPath, 'utf8')); ev = readEvalResult(j); harness = harnessProblem(j); } catch {}
+  if (harness) { step(`claude plugin eval (${changed.join(', ')})`, false, `HARNESS: ${harness}`); report.eval = ev; report.harness = harness; return finish(report); }
   step(`claude plugin eval (${changed.join(', ')})`, r.status === 0 && ev.ok, `exit ${r.status} · score ${ev.score ?? '?'} · ${ev.cases?.map(c => `${c.name} ${c.score ?? '?'}${c.delta != null ? ' Δ' + c.delta : ''}`).join(', ') ?? ''}`);
   report.eval = ev;
 

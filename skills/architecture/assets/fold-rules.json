@@ -1,6 +1,7 @@
 {
   "include": "^(src|apps|packages|lib)",
   "roots": ["."],
+  "engine": "builtin",
   "tsConfig": false,
   "rules": [
     { "match": "^apps/([^/]+)/", "component": "$1" },

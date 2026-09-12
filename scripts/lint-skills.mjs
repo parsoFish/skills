@@ -68,6 +68,7 @@ export function lintForbidden(root, config) {
   const errors = [];
   for (const dir of config.scan ?? ['skills', 'evals']) for (const f of walk(join(root, dir))) {
     if (!/\.(md|json|c4|mjs|js|ts|yaml|yml|txt)$/.test(f)) continue;
+    if (/\/evals\/(results\/|gate-)/.test(f)) continue; // generated run outputs, not skill content
     const lines = readFileSync(f, 'utf8').split(/\r?\n/);
     lines.forEach((l, i) => { const m = l.match(re); if (m) errors.push(`${f.slice(root.length + 1)}:${i + 1}: forbidden term "${m[1]}" (skills must not reference the author's own projects)`); });
   }
