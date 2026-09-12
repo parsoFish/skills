@@ -44,6 +44,9 @@ export function lintSkill(dir) {
     const target = join(dir, m[1].split('#')[0]);
     if (!existsSync(target)) errors.push(`${folder}: broken link ${m[1]}`);
   }
+  const evals = join(dir, '..', '..', 'evals', folder);
+  const hasCase = existsSync(evals) && readdirSync(evals).some(c => existsSync(join(evals, c, 'graders')) && readdirSync(join(evals, c, 'graders')).some(f => /type:\s*tool_used[\s\S]*tool:\s*Skill/.test(readFileSync(join(evals, c, 'graders', f), 'utf8'))));
+  if (!hasCase) errors.push(`${folder}: no eval case under evals/${folder}/ with a tool_used: Skill grader (every skill needs one before it can pass the gate)`);
   const refs = join(dir, 'references');
   if (existsSync(refs)) for (const f of readdirSync(refs)) {
     const p = join(refs, f);

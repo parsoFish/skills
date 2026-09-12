@@ -40,7 +40,7 @@ CLI/library · service · IaC · plugin/provider · simulation/game · hardware 
 
 ## Layout per project
 ```
-docs/architecture/   written: overview.md · model/*.c4 · scenarios/ · journeys/ · loop.md · signals.md · secrets.md · risks.md · stakeholders.md · glossary.md · CHECKLIST.md · fold-rules.json · answers.yaml · _run/
+docs/architecture/   written: overview.md · model/*.c4 · scenarios/ · journeys/ · loop.md · signals.md · secrets.md · risks.md · stakeholders.md · glossary.md · CHECKLIST.md · fold-rules.json · answers.json · _run/
 docs/decisions/      ADRs NNN-*.md (append-only, supersede) · README.md generated index
 docs/reference/      generated only: components.json/md · drift.json/md · views/ · deps · delivery · extension-points · api · tests-by-seam · fitness
 ```
@@ -61,4 +61,4 @@ docs/reference/      generated only: components.json/md · drift.json/md · view
 Humans see rendered views (legend colours, light theme, caption naming the question, ≤ 15 nodes, minor edges filtered) and markdown. Agents read `.c4`, JSON, mermaid source. Both forms come from the same command; the human form is derived, never hand-edited.
 
 ## Completeness
-Registers are complete only against `completeness.yaml` criteria (kit defaults, project overrides). Unmet criteria appear as GAP lines in the register's header.
+Registers are complete only against `completeness.json` criteria (kit defaults, project overrides). Unmet criteria appear as GAP lines in the register's header.

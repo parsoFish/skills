@@ -5,12 +5,18 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { lintSkill, lintForbidden, parseFrontmatter, LIMITS } from '../scripts/lint-skills.mjs';
 
-function skill(name, fm, body = '# x\n') {
-  const root = mkdtempSync(join(tmpdir(), 'skill-'));
-  const dir = join(root, name); mkdirSync(dir, { recursive: true });
+function skill(name, fm, body = '# x\n', withEval = true) {
+  const root = mkdtempSync(join(tmpdir(), 'repo-'));
+  const dir = join(root, 'skills', name); mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'SKILL.md'), `---\n${fm}\n---\n${body}`);
+  if (withEval) { mkdirSync(join(root, 'evals', name, 'c1', 'graders'), { recursive: true }); writeFileSync(join(root, 'evals', name, 'c1', 'prompt.md'), 'p'); writeFileSync(join(root, 'evals', name, 'c1', 'graders', 'fired.md'), '---\ntype: tool_used\ntool: Skill\n---\n'); }
   return dir;
 }
+
+test('a skill without an eval case carrying a Skill grader is reported', () => {
+  const dir = skill('lonely', 'name: lonely\ndescription: Use when needed.', '# x\n', false);
+  assert.ok(lintSkill(dir).some(e => e.includes('no eval case')));
+});
 
 test('parseFrontmatter reads name and description', () => {
   const { fields } = parseFrontmatter('---\nname: a\ndescription: "Use when x"\n---\nbody');

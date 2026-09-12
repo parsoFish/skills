@@ -4,31 +4,53 @@ on:
   push: { branches: [main] }
   pull_request:
 jobs:
-  lint-and-test:
+  deterministic:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install pyyaml
       - run: npm run lint
       - run: npm test
-      - name: Validate plugin + skills (strict)
+      - name: Strict plugin validation + skill-creator validator (deterministic half of the gate)
         run: |
           npm install -g @anthropic-ai/claude-code
           claude plugin validate . --strict
-  evals:
-    # costs money: runs only when a PR carries the `evals` label or on manual dispatch
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'evals')
-    needs: lint-and-test
+          claude plugin marketplace add anthropics/skills || true
+          claude plugin install skill-creator@anthropic-agent-skills || true
+          node scripts/gate.mjs --base origin/${{ github.base_ref || 'main' }} --no-agentic
+  agentic-gate:
+    # Any PR that touches a skill or its evals must pass the agentic gate (plugin eval + structural review). Bounded by --max-cost-usd.
+    needs: deterministic
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - id: changed
+        run: |
+          base=origin/${{ github.base_ref || 'main' }}
+          if git diff --name-only "$base...HEAD" | grep -qE '^(skills|evals)/'; then echo "skills=true" >> "$GITHUB_OUTPUT"; else echo "skills=false" >> "$GITHUB_OUTPUT"; fi
       - uses: actions/setup-node@v4
+        if: steps.changed.outputs.skills == 'true'
         with: { node-version: 22 }
-      - run: npm install -g @anthropic-ai/claude-code
-      - name: Run skill evals with a hard cost ceiling
+      - uses: actions/setup-python@v5
+        if: steps.changed.outputs.skills == 'true'
+        with: { python-version: '3.12' }
+      - name: Agentic gate (requires ANTHROPIC_API_KEY)
+        if: steps.changed.outputs.skills == 'true'
         env: { ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }} }
-        run: claude plugin eval . --trust-plugin --json evals/results.json --threshold 0.8 --max-cost-usd 10 --no-publish
+        run: |
+          test -n "$ANTHROPIC_API_KEY" || { echo "ANTHROPIC_API_KEY secret missing: the agentic gate cannot run and a skill change must not merge without it"; exit 1; }
+          pip install pyyaml
+          npm install -g @anthropic-ai/claude-code
+          claude plugin marketplace add anthropics/skills || true
+          claude plugin install skill-creator@anthropic-agent-skills || true
+          node scripts/gate.mjs --base origin/${{ github.base_ref || 'main' }} --max-cost-usd 10
       - uses: actions/upload-artifact@v4
-        with: { name: eval-results, path: evals/results.json }
-# workflow_dispatch lets you run evals by hand from the Actions tab
+        if: always() && steps.changed.outputs.skills == 'true'
+        with: { name: gate-report, path: evals/gate-report.json }

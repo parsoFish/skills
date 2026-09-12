@@ -3,9 +3,9 @@
 | stage | who | input | output | guarantee |
 |---|---|---|---|---|
 | 0 kickoff | skill | checkout | run id, archetypes | no model call |
-| 1 kit run | `arch.mjs`, no model | checkout + `docs/architecture/` (hand model, answers.yaml, fold-rules.json) | `docs/reference/*.json` + markdown pairs, rendered views, `_run/gaps.json` | deterministic: pinned tools, sorted output, no timestamps in bodies, read-only on source |
+| 1 kit run | `arch.mjs`, no model | checkout + `docs/architecture/` (hand model, answers.json, fold-rules.json) | `docs/reference/*.json` + markdown pairs, rendered views, `_run/gaps.json` | deterministic: pinned tools, sorted output, no timestamps in bodies, read-only on source |
 | 2 agent review | one reviewing agent, bounded turns | agent-facing forms only | written docs with evidence tiers, `_run/review.md`, `_run/interview.md`, gap classes | never invents; never edits `reference/`; kit gaps filed, not patched |
-| 3 present | person | human-facing forms only | decisions in `answers.yaml` | no `.c4`/JSON shown; each question has evidence, options, default; answered questions not re-asked |
+| 3 present | person | human-facing forms only | decisions in `answers.json` | no `.c4`/JSON shown; each question has evidence, options, default; answered questions not re-asked |
 
 ## Stage 1 in order
 1. classify from manifests (package.json, go.mod, *.tf, manifest.json, pyproject).

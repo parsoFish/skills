@@ -23,6 +23,7 @@ import { evaluate } from './completeness.mjs';
 import { buildGaps, interviewMd, kitIssuesMd, projectChangesMd, loadAnswers } from './interview.mjs';
 import { checklistMd } from './checklist.mjs';
 import { indexMd } from './present.mjs';
+import { writeSnapshot, readSnapshot, guardReport } from './guard.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
@@ -31,10 +32,11 @@ const has = name => args.includes(name);
 const positional = args.filter((a, i) => !a.startsWith('--') && args[i - 1] !== '--out');
 const cmd = positional[0];
 const sub = cmd === 'extract' ? positional[1] : undefined;
-const root = resolve(positional[cmd === 'extract' ? 2 : 1] ?? '.');
+const root = resolve(positional[cmd === 'extract' || cmd === 'guard' ? 2 : 1] ?? '.');
 const docsDir = resolve(flag('--out') ?? join(root, 'docs'));
+const isEntry = import.meta.url === `file://${process.argv[1]}`;
 // Safety: without --out, arch only writes into a docs tree it manages (marker docs/reference/.arch-managed) or a docs tree that does not exist yet.
-if (!flag('--out') && existsSync(docsDir) && !existsSync(join(docsDir, 'reference', '.arch-managed')) && !['classify', undefined].includes(cmd)) {
+if (isEntry && !flag('--out') && existsSync(docsDir) && !existsSync(join(docsDir, 'reference', '.arch-managed')) && !['classify', undefined].includes(cmd)) {
   console.error(`refusing to write into ${docsDir}: it exists but is not managed by arch. Pass --out <dir>, or create ${join(docsDir, 'reference', '.arch-managed')} to adopt it.`);
   process.exit(3);
 }
@@ -63,7 +65,8 @@ export function extractComponents(rules) {
 /** Relationships declared in hand.c4: `a -> b 'title'`, `sys.a -[kind]-> sys.b 'title'`. runtime = kind runtime or "(runtime)" in title. */
 export function handEdgesFromC4(text, systemId) {
   const edges = [];
-  const re = /^\s*([A-Za-z0-9_.]+)\s*-(?:\[([a-z]+)\])?->\s*([A-Za-z0-9_.]+)\s*(?:'([^']*)')?/;
+  // `a -> b 'title'` and `a -[kind]-> b 'title'` (the earlier pattern only matched the kinded form, so plain hand edges were never diffed)
+  const re = /^\s*([A-Za-z0-9_.]+)\s*-(?:\[([a-z]+)\]-)?>\s*([A-Za-z0-9_.]+)\s*(?:'([^']*)')?/;
   const strip = id => id.startsWith(systemId + '.') ? id.slice(systemId.length + 1) : id;
   for (const line of text.split(/\r?\n/)) {
     const m = line.match(re); if (!m) continue;
@@ -135,7 +138,7 @@ function run() {
   console.log(`kinds ${kinds.kinds.join('+')} · ${components.nodes.length} components · ${components.edges.length} edges · ${components.cycles.length} cycles · ${views.length} views · ${gaps.length} gaps → ${docsDir}`);
 }
 
-switch (cmd) {
+if (isEntry) switch (cmd) {
   case 'classify': console.log(JSON.stringify(classify(root), null, 1)); break;
   case 'extract': {
     const table = extractorTable(loadRules());
@@ -157,5 +160,12 @@ switch (cmd) {
     process.exitCode = r.ok ? 0 : 1; break;
   }
   case 'run': run(); break;
-  default: console.log('usage: arch <classify|extract <kind>|drift|check|run> [root] [--out <docsDir>] [--no-render]'); process.exitCode = 2;
+  case 'guard': {
+    if (sub === undefined) { /* positional parsing: guard <snapshot|verify> */ }
+    const which = positional[1];
+    if (which === 'snapshot') { const p = writeSnapshot(docsDir); console.log(`stage-2 snapshot written: ${p}`); break; }
+    if (which === 'verify') { const g = guardReport(docsDir, readSnapshot(docsDir)); write(join(P.run, 'guard.md'), g.text); console.log(g.text.trim()); process.exitCode = g.ok ? 0 : 1; break; }
+    console.error('usage: arch guard <snapshot|verify> [root] --out <docsDir>'); process.exitCode = 2; break;
+  }
+  default: console.log('usage: arch <classify|extract <kind>|drift|check|run|guard <snapshot|verify>> [root] [--out <docsDir>] [--no-render] [--now YYYY-MM-DD]'); process.exitCode = 2;
 }

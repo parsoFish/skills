@@ -1,6 +1,6 @@
 ---
 name: architecture
-description: Generates and maintains architecture design and current-state documentation for any software project (CLI, service, IaC, plugin, simulation, hardware, data pipeline, browser extension) following one house style: a deterministic kit run that extracts components, dependencies, delivery and seams from the checkout and renders C4 views with LikeC4, then a bounded agent review that drafts the written docs with evidence tiers, then a human-facing bundle plus interview questions. Use when the user asks to document, draw, review, or update the architecture of a repo, asks for C4 or context diagrams, an ADR index, a risk register, a dependency ledger, or "what is the current state of this system".
+description: "Generates and maintains architecture design and current-state documentation for any software project (CLI, service, IaC, plugin, simulation, hardware, data pipeline, browser extension) following one house style, a deterministic kit run that extracts components, dependencies, delivery and seams from the checkout and renders C4 views with LikeC4, then a bounded agent review that drafts the written docs with evidence tiers, then a human-facing bundle plus interview questions. Use when the user asks to document, draw, review, or update the architecture of a repo, asks for C4 or context diagrams, an ADR index, a risk register, a dependency ledger, or 'what is the current state of this system'."
 license: MIT
 ---
 
@@ -26,13 +26,13 @@ Outputs, each JSON with a derived markdown twin under `reference/` (first line `
 Run it twice if in doubt: the outputs are byte-identical for the same input.
 
 ### Stage 2 — agent review (bounded)
-Read only agent-facing forms: `components.json`, `drift.json`, `fitness.json`, `gaps.json`, existing written docs. Then:
+Guardrails, non-negotiable: **one reviewing agent, no subagents or forks**; budget 60 turns; read only agent-facing forms (`components.json`, `drift.json`, `fitness.json`, `completeness.json`, `gaps.json`, existing written docs) plus the source tree for citations; write only under `architecture/` (except the render step); never edit kit-owned files (`reference/`, `CHECKLIST.md`, `gaps.json`, `questions.md`, `generated.c4`, `spec.c4`). Before starting: `node scripts/arch/arch.mjs guard snapshot <root> --out <docsDir>`. After finishing: `… guard verify …` must pass — it fails if a kit-owned file changed or if an interview question is kit-shaped (extractor, regex, renderer) instead of an operator decision. Then:
 1. Seed or update `docs/architecture/model/hand.c4` from the generated graph plus the kind template in `assets/`; tag runtime-only relationships so drift skips them. Keep every view readable: no `include *` in the containers view, at most 12 nodes per view, the components view keeps `exclude * -> * where kind is minor`. Never edit `CHECKLIST.md` or anything under `reference/`: fix the facts they derive from (fold rules, `answers.json`, the written docs) and re-run stage 1.
 2. Draft or update the written docs the CHECKLIST for this kind requires (see house-style §3): overview, scenarios, journeys, loop, signals, secrets, risks, stakeholders, glossary, deps whys. Every non-code claim cites a file or ADR, or carries `GAP:`.
 3. Classify every gap: `kit` (the tooling should have known — record it in `_run/kit-issues.md`, do not patch the project), `project` (the repo must change — list it in `review.md`, do not do it), `human` (write an interview question).
 4. Check the registers against [references/completeness.json](references/completeness.json) and state unmet criteria as GAP lines in each file's header.
 5. Write `_run/review.md` (what changed, confidence per file, project changes called out) and `_run/interview.md`: curate `_run/questions.md` (merge near-duplicates, drop anything answered, add questions the kit could not know) using the shape in [references/interview.md](references/interview.md). Stage 1 never overwrites `interview.md` or `review.md`.
-6. Exit checks: no edits under `docs/reference/`; every written file under 400 lines; net lines reported; every gap classified.
+6. Exit checks: `arch guard verify` passes; `arch check` passes; every written file under 400 lines; net lines reported; every gap classified; questions that are really kit issues moved to `kit-issues.md`.
 
 ### Stage 3 — present
 Open `_run/index.md`: rendered views first (never `.c4` or JSON), then written docs, then `interview.md`. Record answers in `docs/architecture/answers.json` as `{"<question id>": {"answer": "...", "at": "YYYY-MM-DD"}}`. A re-run starts at stage 1 and re-asks only questions whose id is not answered.

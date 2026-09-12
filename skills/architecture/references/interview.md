@@ -15,5 +15,5 @@ Rules
 - One finding per question. A question that needs two answers is two questions.
 - Options are concrete actions, never "let me know".
 - The default must be safe to apply unattended.
-- Answers are stored in `docs/architecture/answers.yaml` as `id: {answer, at, note}`; the next run re-asks only when the evidence for that id changed.
+- Answers are stored in `docs/architecture/answers.json` as `id: {answer, at, note}`; the next run re-asks only when the evidence for that id changed.
 - Kit-class gaps never become questions; they are filed in `_run/kit-issues.md` with a repro.

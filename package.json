@@ -4,13 +4,20 @@
   "description": "Personal collection of Claude Code skills, packaged as a plugin marketplace",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "lint": "node scripts/lint-skills.mjs",
     "test": "node --test \"tests/**/*.test.mjs\" \"skills/*/scripts/**/*.test.mjs\"",
     "validate": "claude plugin validate . --strict",
     "eval": "claude plugin eval . --trust-plugin --json evals/results.json --threshold 0.8 --max-cost-usd 10 --no-publish",
-    "check": "npm run lint && npm test && npm run validate"
+    "check": "npm run lint && npm test && npm run validate",
+    "gate": "node scripts/gate.mjs",
+    "gate:quick": "node scripts/gate.mjs --no-agentic",
+    "gate:all": "node scripts/gate.mjs --all",
+    "hooks:install": "node scripts/install-hooks.mjs",
+    "postinstall": "node scripts/install-hooks.mjs || true"
   },
   "license": "MIT"
 }

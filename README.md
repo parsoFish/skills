@@ -22,7 +22,7 @@ npx skills add parsoFish/skills --skill architecture
 ## Develop a skill
 
 1. Draft with the `skill-creator` skill (`/skill-creator`), keep `SKILL.md` under 500 lines, put detail in `references/`, tooling in `scripts/` with a `*.test.mjs` beside every script.
-2. `npm run check` — lint (spec constraints + house limits), script tests, `claude plugin validate --strict`.
+2. `npm run gate` — deterministic checks, then local agentic validation (`claude plugin eval` + a headless structural review) for every changed skill. Installed as the pre-push hook; CI runs the same on every PR touching a skill. `npm run gate:quick` for the deterministic half only.
 3. Review with `plugin-dev`'s `skill-reviewer` agent.
 4. Add an eval case under `evals/<skill>/` and run `npm run eval` (costs money; also runs in CI on the `evals` PR label or manual dispatch). Read the with/without delta, not just the score.
 5. Conventional commit; entry in CHANGELOG.md; bump `plugin.json` version when a skill's behaviour changes.

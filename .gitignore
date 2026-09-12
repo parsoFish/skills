@@ -4,3 +4,6 @@ evals/**/runs/
 *.log
 .DS_Store
 /tmp/
+evals/gate-eval.json
+evals/gate-report.json
+evals/results/
