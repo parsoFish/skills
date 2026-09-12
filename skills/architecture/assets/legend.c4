@@ -11,18 +11,19 @@ specification {
   color kExt #7C869A
   color kModel #A03A6E
   color kIac #8A6D1F
-  element system
-  element human     { style { shape person; color kHuman } }
-  element webui     { style { shape browser; color kUi } }
-  element service   { style { shape rectangle; color kSvc } }
-  element cli       { style { shape rectangle; color kCli } }
-  element agent     { style { shape rectangle; color kAgent } }
-  element knowledge { style { shape cylinder; color kKnow } }
-  element log       { style { shape storage; color kLog } }
-  element workspace { style { shape rectangle; color kWs } }
-  element external  { style { shape rectangle; color kExt; border dashed } }
-  element modelapi  { style { shape rectangle; color kModel; border dashed } }
-  element iacmodule { style { shape rectangle; color kIac } }
+  color kSys #7C869A
+  element system    { notation 'System — the modelled boundary' style { shape rectangle; color kSys; border dashed } }
+  element human     { notation 'Human — a person' style { shape person; color kHuman } }
+  element webui     { notation 'Web UI — a browser-based interface' style { shape browser; color kUi } }
+  element service   { notation 'Service — a running process or daemon' style { shape rectangle; color kSvc } }
+  element cli       { notation 'CLI — a command-line tool' style { shape rectangle; color kCli } }
+  element agent     { notation 'LLM agent — a model-driven worker' style { shape rectangle; color kAgent } }
+  element knowledge { notation 'Knowledge store — data at rest' style { shape cylinder; color kKnow } }
+  element log       { notation 'Log — an append-only event stream' style { shape storage; color kLog } }
+  element workspace { notation 'Workspace — a working directory or checkout' style { shape rectangle; color kWs } }
+  element external  { notation 'External system — outside our control' style { shape rectangle; color kExt; border dashed } }
+  element modelapi  { notation 'Model API — a hosted LLM endpoint' style { shape rectangle; color kModel; border dashed } }
+  element iacmodule { notation 'IaC module — infrastructure as code' style { shape rectangle; color kIac } }
   relationship imports
   relationship minor
   relationship runtime

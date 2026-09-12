@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: document-a-terraform-repo
+description: Document a small Terraform repo from scratch; the module graph and resource inventory must come from the kit, not be invented.
+context:
+  scaffold_script: fixture.sh

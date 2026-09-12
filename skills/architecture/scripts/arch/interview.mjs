@@ -133,11 +133,46 @@ export function kitIssuesMd(gaps) {
   return classListMd('Kit issues', gaps, 'kit', g => [`repro: ${g.evidence.join(', ') || 'none'}`]);
 }
 
-export function projectChangesMd(gaps) {
-  return classListMd('Project changes', gaps, 'project', g => [
-    `evidence: ${g.evidence.join(', ') || 'none'}`,
-    `changes: ${g.changes.join(', ') || 'none'}`,
-  ]);
+/**
+ * Persist project-class gaps across runs so a fixed defect that comes back is visible as a
+ * regression, not silently re-reported as brand new. prev: the previous run's
+ * `_run/project-changes.json`, [{id, status, firstSeen, lastSeen}]. gaps: this run's buildGaps()
+ * output (only class 'project' entries matter). now: injectable for deterministic tests.
+ *
+ * Status lifecycle: new (first ever seen) -> open (still present on a later run) -> resolved (no
+ * longer in gaps) -> regressed (resolved, then seen again) -> open (still present the run after
+ * that). Resolved records are kept — not dropped — so a later reappearance can be told apart from
+ * a genuinely new gap.
+ */
+export function reconcileProjectChanges(prev = [], gaps = [], now = new Date().toISOString().slice(0, 10)) {
+  const current = gaps.filter(g => g.class === 'project');
+  const currentIds = new Set(current.map(g => g.id));
+  const prevMap = new Map(prev.map(p => [p.id, p]));
+  const out = [];
+  for (const g of current) {
+    const p = prevMap.get(g.id);
+    if (!p) out.push({ id: g.id, status: 'new', firstSeen: now, lastSeen: now });
+    else out.push({ id: g.id, status: p.status === 'resolved' ? 'regressed' : 'open', firstSeen: p.firstSeen ?? now, lastSeen: now });
+  }
+  for (const p of prev) {
+    if (currentIds.has(p.id)) continue;
+    out.push(p.status === 'resolved' ? p : { id: p.id, status: 'resolved', firstSeen: p.firstSeen ?? p.lastSeen ?? now, lastSeen: p.lastSeen ?? now });
+  }
+  return out.sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/** changes: optional reconcileProjectChanges() output, joined in by id to render a status line per gap. */
+export function projectChangesMd(gaps, changes = []) {
+  const byId = new Map(changes.map(c => [c.id, c]));
+  return classListMd('Project changes', gaps, 'project', g => {
+    const lines = [
+      `evidence: ${g.evidence.join(', ') || 'none'}`,
+      `changes: ${g.changes.join(', ') || 'none'}`,
+    ];
+    const c = byId.get(g.id);
+    if (c) lines.push(`status: ${c.status} (first seen: ${c.firstSeen}, last seen: ${c.lastSeen})`);
+    return lines;
+  });
 }
 
 export function loadAnswers(path) {

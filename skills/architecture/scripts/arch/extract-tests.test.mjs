@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { extractTests } from './extract-tests.mjs';
+import { extractTests, guessLayer } from './extract-tests.mjs';
 
 function project(files) {
   const root = mkdtempSync(join(tmpdir(), 'tests-'));
@@ -48,7 +48,43 @@ test('a @seam tag without a @layer on the same line still registers the seam wit
 test('no test files gives total 0 without throwing', () => {
   const root = project({ 'README.md': 'hi\n' });
   const r = extractTests(root);
-  assert.deepEqual(r, { total: 0, byDir: [], tagged: { seams: [], count: 0 }, taggingAdopted: false });
+  assert.deepEqual(r, { total: 0, byDir: [], tagged: { seams: [], count: 0 }, taggingAdopted: false, heuristic: false });
+});
+
+test('guessLayer maps unit/spec, contract/integration, e2e/journey/walkthrough/stories, verify/acceptance, and defaults to unit', () => {
+  assert.equal(guessLayer('packages/foo/unit'), 'unit');
+  assert.equal(guessLayer('packages/foo/spec'), 'unit');
+  assert.equal(guessLayer('packages/foo/contract'), 'contract');
+  assert.equal(guessLayer('packages/foo/integration'), 'contract');
+  assert.equal(guessLayer('packages/foo/e2e'), 'journey');
+  assert.equal(guessLayer('packages/foo/journey'), 'journey');
+  assert.equal(guessLayer('packages/foo/walkthrough'), 'journey');
+  assert.equal(guessLayer('packages/foo/stories'), 'journey');
+  assert.equal(guessLayer('packages/foo/verify'), 'ground');
+  assert.equal(guessLayer('packages/foo/acceptance'), 'ground');
+  assert.equal(guessLayer('packages/foo/misc'), 'unit');
+});
+
+test('with no @seam tags anywhere, a heuristic row per test dir fills the grid instead of leaving it empty', () => {
+  const root = project({
+    'unit/a.test.ts': '',
+    'e2e/b.test.ts': '',
+  });
+  const r = extractTests(root);
+  assert.equal(r.taggingAdopted, false);
+  assert.equal(r.heuristic, true);
+  assert.deepEqual(r.tagged.seams.sort((a, b) => a.seam.localeCompare(b.seam)), [
+    { seam: 'e2e', layers: { unit: 0, contract: 0, journey: '~', ground: 0 } },
+    { seam: 'unit', layers: { unit: '~', contract: 0, journey: 0, ground: 0 } },
+  ]);
+  assert.equal(r.tagged.count, 2);
+});
+
+test('real @seam tags take priority over the heuristic fallback', () => {
+  const root = project({ 'tests/a.test.ts': '// @seam auth @layer unit\n' });
+  const r = extractTests(root);
+  assert.equal(r.heuristic, false);
+  assert.deepEqual(r.tagged.seams, [{ seam: 'auth', layers: { unit: 1, contract: 0, journey: 0, ground: 0 } }]);
 });
 
 test('opts.ignore excludes a directory from the test-file scan', () => {

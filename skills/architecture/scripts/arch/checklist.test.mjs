@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { requiredViews, checklistMd, VIEWS } from './checklist.mjs';
+import { requiredViews, checklistMd, VIEWS, viewShape } from './checklist.mjs';
 import { check } from './check.mjs';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -94,6 +94,44 @@ test('checklistMd output satisfies arch check\'s no-blank-checklist rule once re
   const root = docs({ 'architecture/CHECKLIST.md': md });
   const r = check(root);
   assert.equal(r.results.find(x => x.id === 'docs.no-blank-checklist').ok, true);
+});
+
+test('quality is required for service, iac, pipeline, hardware and optional for every other kind', () => {
+  for (const kind of ['service', 'iac', 'pipeline', 'hardware']) {
+    assert.equal(requiredViews([kind]).find(r => r.view === 'quality').required, '✓', kind);
+  }
+  for (const kind of ['cli', 'plugin', 'simulation', 'extension', 'library']) {
+    assert.equal(requiredViews([kind]).find(r => r.view === 'quality').required, 'opt', kind);
+  }
+});
+
+test('viewShape describes loop, signals, credential, screen-flow, and module-graph as needing a mermaid fence or svg', () => {
+  for (const view of ['loop', 'signals', 'credential', 'screen-flow', 'module-graph']) {
+    assert.equal(viewShape(view).needsFence, true, view);
+  }
+});
+
+test('viewShape gives risks its five required row columns', () => {
+  assert.deepEqual(viewShape('risks').needsTableColumns, ['likelihood', 'impact', 'trigger', 'mitigation', 'owner']);
+});
+
+test('viewShape gives quality its three required row columns', () => {
+  assert.deepEqual(viewShape('quality').needsTableColumns, ['goal', 'scenario', 'rule']);
+  assert.equal(viewShape('quality').file, 'architecture/quality.md');
+});
+
+test('viewShape returns a shape for every declared view, and an unopinionated default for an unknown one', () => {
+  for (const view of VIEWS) {
+    const s = viewShape(view);
+    assert.ok(s && typeof s.file !== 'undefined' && typeof s.needsFence === 'boolean' && Array.isArray(s.needsTableColumns), view);
+  }
+  assert.deepEqual(viewShape('not-a-real-view'), { file: null, needsFence: false, needsTableColumns: [] });
+});
+
+test('viewShape returns a fresh array each call so a caller cannot mutate the shared shape', () => {
+  const a = viewShape('risks');
+  a.needsTableColumns.push('extra');
+  assert.deepEqual(viewShape('risks').needsTableColumns, ['likelihood', 'impact', 'trigger', 'mitigation', 'owner']);
 });
 
 test('a fully-missing checklist is explicit (no blank rows) but fails checklist-complete', () => {

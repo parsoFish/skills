@@ -5,6 +5,7 @@ export const VIEWS = [
   'context', 'component', 'deployment', 'scenarios', 'catalogue', 'api', 'module-graph',
   'adrs', 'risks', 'screen-flow', 'loop', 'device-topology', 'extension-points', 'signals',
   'pipeline', 'credential', 'deps', 'job-dag', 'data-contracts', 'tests', 'stakeholders', 'rules',
+  'quality',
 ];
 
 // Required for every archetype per house-style §3: "context+container, component+drift,
@@ -16,19 +17,24 @@ const RANK = { '✓': 2, opt: 1, '—': 0 };
 // Kind-specific additions beyond BASE. '✓' = named as required by house-style §3; 'opt' = good
 // practice but not mandated for that kind. UI kinds (service, simulation, extension) get
 // screen-flow per "UI kinds add the screen-flow map".
+// quality (top-3 quality goals -> proving scenario -> guarding rule) is required for kinds with
+// an operational surface worth protecting (service, iac, pipeline, hardware) and optional for the
+// rest (cli/library, plugin, simulation, extension) — never "not applicable".
 const KIND_TABLE = {
-  cli: { api: '✓', 'screen-flow': 'opt', credential: 'opt', tests: 'opt', stakeholders: 'opt', risks: 'opt' },
+  cli: { api: '✓', 'screen-flow': 'opt', credential: 'opt', tests: 'opt', stakeholders: 'opt', risks: 'opt', quality: 'opt' },
   service: {
     deployment: '✓', scenarios: '✓', catalogue: '✓', api: '✓', credential: '✓', signals: '✓',
-    tests: '✓', risks: '✓', stakeholders: '✓', 'screen-flow': '✓',
+    tests: '✓', risks: '✓', stakeholders: '✓', 'screen-flow': '✓', quality: '✓',
     'extension-points': 'opt', 'job-dag': 'opt',
   },
-  iac: { 'module-graph': '✓', credential: '✓', risks: '✓', deployment: 'opt', tests: 'opt', stakeholders: 'opt', signals: 'opt' },
-  plugin: { 'extension-points': '✓', api: 'opt', 'screen-flow': 'opt', credential: 'opt', tests: 'opt', stakeholders: 'opt', risks: 'opt' },
-  simulation: { loop: '✓', 'screen-flow': '✓', credential: 'opt', tests: 'opt', stakeholders: 'opt', signals: 'opt', risks: 'opt' },
-  hardware: { loop: '✓', 'device-topology': '✓', signals: '✓', credential: 'opt', tests: 'opt', stakeholders: 'opt', risks: 'opt' },
-  pipeline: { 'job-dag': '✓', 'data-contracts': '✓', catalogue: 'opt', signals: 'opt', tests: 'opt', stakeholders: 'opt', risks: 'opt' },
-  extension: { 'screen-flow': '✓', 'extension-points': '✓', api: 'opt', credential: 'opt', tests: 'opt', stakeholders: 'opt', risks: 'opt' },
+  iac: { 'module-graph': '✓', credential: '✓', risks: '✓', quality: '✓', deployment: 'opt', tests: 'opt', stakeholders: 'opt', signals: 'opt' },
+  plugin: { 'extension-points': '✓', api: 'opt', 'screen-flow': 'opt', credential: 'opt', tests: 'opt', stakeholders: 'opt', risks: 'opt', quality: 'opt' },
+  simulation: { loop: '✓', 'screen-flow': '✓', credential: 'opt', tests: 'opt', stakeholders: 'opt', signals: 'opt', risks: 'opt', quality: 'opt' },
+  hardware: { loop: '✓', 'device-topology': '✓', signals: '✓', quality: '✓', credential: 'opt', tests: 'opt', stakeholders: 'opt', risks: 'opt' },
+  pipeline: { 'job-dag': '✓', 'data-contracts': '✓', quality: '✓', catalogue: 'opt', signals: 'opt', tests: 'opt', stakeholders: 'opt', risks: 'opt' },
+  extension: { 'screen-flow': '✓', 'extension-points': '✓', api: 'opt', credential: 'opt', tests: 'opt', stakeholders: 'opt', risks: 'opt', quality: 'opt' },
+  // library shares CLI's required-view set per house-style's "CLI/library" archetype grouping.
+  library: { api: 'opt', 'screen-flow': 'opt', credential: 'opt', tests: 'opt', stakeholders: 'opt', risks: 'opt', quality: 'opt' },
 };
 
 const REASONS = {
@@ -49,6 +55,48 @@ const REASONS = {
   risks: 'risk register not required for this kind',
   'device-topology': 'not a hardware kind',
 };
+
+// "adrs" presence semantics: a directory existing is not evidence of a real decision log — an
+// empty `decisions/` (or a lone generated README.md with zero ADRs under it) is not "present".
+// A caller checking this view should require at least one *.md decision file beyond the
+// generated index, not just existsSync on the directory.
+
+// Per-view "what counts as present" shape, independent of which inode holds it, so a caller can
+// check the actual content (a real diagram, the right columns) instead of just a path existing.
+// needsFence: the generated doc is diagram-first — present only with a ```mermaid fence or an
+// <svg> element, not prose. needsTableColumns: present only once a GFM table has all of these
+// columns (by header name, case/punctuation-insensitive) with every row filled in.
+const SHAPES = {
+  context: { file: 'reference/views/index.png', needsFence: false, needsTableColumns: [] },
+  component: { file: 'reference/components.md', needsFence: false, needsTableColumns: ['component', 'files', 'tests'] },
+  deployment: { file: 'reference/views/deployment.png', needsFence: false, needsTableColumns: [] },
+  scenarios: { file: 'architecture/scenarios/', needsFence: true, needsTableColumns: [] },
+  catalogue: { file: 'reference/events/', needsFence: false, needsTableColumns: [] },
+  api: { file: 'reference/api.md', needsFence: false, needsTableColumns: [] },
+  'module-graph': { file: 'reference/infra.md', needsFence: true, needsTableColumns: [] },
+  adrs: { file: 'decisions/README.md', needsFence: false, needsTableColumns: [] },
+  risks: { file: 'architecture/risks.md', needsFence: false, needsTableColumns: ['likelihood', 'impact', 'trigger', 'mitigation', 'owner'] },
+  'screen-flow': { file: 'architecture/journeys/', needsFence: true, needsTableColumns: [] },
+  loop: { file: 'architecture/loop.md', needsFence: true, needsTableColumns: [] },
+  'device-topology': { file: 'reference/views/deployment.png', needsFence: false, needsTableColumns: [] },
+  'extension-points': { file: 'reference/extension-points.md', needsFence: false, needsTableColumns: ['name', 'glob', 'count', 'installed'] },
+  signals: { file: 'architecture/signals.md', needsFence: true, needsTableColumns: [] },
+  pipeline: { file: 'reference/delivery.md', needsFence: false, needsTableColumns: ['file', 'job', 'needs', 'runs-on', 'steps'] },
+  credential: { file: 'architecture/secrets.md', needsFence: true, needsTableColumns: [] },
+  deps: { file: 'reference/deps.md', needsFence: false, needsTableColumns: ['name', 'version', 'usedBy', 'why', 'unused'] },
+  'job-dag': { file: 'reference/pipeline.md', needsFence: true, needsTableColumns: [] },
+  'data-contracts': { file: 'reference/data/', needsFence: false, needsTableColumns: [] },
+  tests: { file: 'reference/tests-by-seam.md', needsFence: false, needsTableColumns: ['seam', 'unit', 'contract', 'journey', 'ground'] },
+  stakeholders: { file: 'architecture/stakeholders.md', needsFence: false, needsTableColumns: ['stakeholder', 'concern', 'view'] },
+  rules: { file: 'reference/fitness.md', needsFence: false, needsTableColumns: ['id', 'ok', 'detail'] },
+  quality: { file: 'architecture/quality.md', needsFence: false, needsTableColumns: ['goal', 'scenario', 'rule'] },
+};
+
+/** What counts as "present" for a view: its conventional path plus the shape a caller should check (a mermaid/svg fence, or specific table columns) rather than just an inode existing. Unknown views get an empty, unopinionated shape. */
+export function viewShape(view) {
+  const s = SHAPES[view];
+  return s ? { ...s, needsTableColumns: [...s.needsTableColumns] } : { file: null, needsFence: false, needsTableColumns: [] };
+}
 
 /** Union the required-view matrix across every classified kind; unknown kinds contribute nothing. */
 export function requiredViews(kinds) {

@@ -11,6 +11,21 @@ const TEST_FILE = /\.(test|spec)\.[^/]+$/;
 const TEST_DIR = /(^|\/)(tests?|__tests__)(\/|$)/;
 const LAYERS = ['unit', 'contract', 'journey', 'ground'];
 
+// When no @seam/@layer tags exist anywhere, guess a layer per test dir from its path so the
+// tests-by-seam grid is never empty (a project with zero tagging still gets a starting point).
+// First match wins; a dir matching none of these defaults to 'unit'.
+const LAYER_GUESSES = [
+  { layer: 'unit', re: /unit|spec/i },
+  { layer: 'contract', re: /contract|integration/i },
+  { layer: 'journey', re: /e2e|journey|walkthrough|stories/i },
+  { layer: 'ground', re: /verify|acceptance/i },
+];
+
+function guessLayer(dir) {
+  for (const { layer, re } of LAYER_GUESSES) if (re.test(dir)) return layer;
+  return 'unit';
+}
+
 function isTestFile(rel) { return TEST_FILE.test(rel) || TEST_DIR.test(rel); }
 
 // First two directory segments, e.g. "packages/flows/tests/a.test.ts" -> "packages/flows".
@@ -42,8 +57,20 @@ export function extractTests(root, opts = {}) {
     }
   }
   const seams = [...seamMap.entries()].map(([seam, layers]) => ({ seam, layers })).sort((a, b) => a.seam.localeCompare(b.seam));
+  const taggingAdopted = seams.length > 0;
 
-  return { total, byDir, tagged: { seams, count: seams.length }, taggingAdopted: seams.length > 0 };
+  // No real tags anywhere: emit a heuristic row per test dir, guessed layer marked '~', so the
+  // grid still has something to look at instead of rendering as empty.
+  const heuristic = !taggingAdopted && byDir.length > 0;
+  const renderedSeams = heuristic
+    ? byDir.map(({ dir }) => {
+        const layers = { unit: 0, contract: 0, journey: 0, ground: 0 };
+        layers[guessLayer(dir)] = '~';
+        return { seam: dir, layers };
+      })
+    : seams;
+
+  return { total, byDir, tagged: { seams: renderedSeams, count: renderedSeams.length }, taggingAdopted, heuristic };
 }
 
-export { LAYERS };
+export { LAYERS, guessLayer };

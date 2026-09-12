@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { buildGaps, interviewMd, kitIssuesMd, projectChangesMd, loadAnswers } from './interview.mjs';
+import { buildGaps, interviewMd, kitIssuesMd, projectChangesMd, loadAnswers, reconcileProjectChanges } from './interview.mjs';
 
 test('kind-ambiguous classify produces a human gap with one option per kind', () => {
   const gaps = buildGaps({ classify: { kinds: ['cli', 'service'], ambiguous: true, evidence: ['bin + web framework'] } });
@@ -100,6 +100,57 @@ test('kitIssuesMd lists kit gaps with a repro line; projectChangesMd lists proje
   const proj = projectChangesMd(gaps);
   assert.match(proj, /## API surface has no schema/);
   assert.match(proj, /changes: docs\/reference\/api\.md/);
+});
+
+test('reconcileProjectChanges: a gap never seen before is "new"', () => {
+  const gaps = [{ id: 'deps-unused-left-pad', class: 'project' }];
+  const out = reconcileProjectChanges([], gaps, '2026-09-12');
+  assert.deepEqual(out, [{ id: 'deps-unused-left-pad', status: 'new', firstSeen: '2026-09-12', lastSeen: '2026-09-12' }]);
+});
+
+test('reconcileProjectChanges: a gap seen again (new or open) becomes "open" and keeps its firstSeen', () => {
+  const prev = [{ id: 'deps-unused-left-pad', status: 'new', firstSeen: '2026-09-01', lastSeen: '2026-09-01' }];
+  const gaps = [{ id: 'deps-unused-left-pad', class: 'project' }];
+  const out = reconcileProjectChanges(prev, gaps, '2026-09-12');
+  assert.deepEqual(out, [{ id: 'deps-unused-left-pad', status: 'open', firstSeen: '2026-09-01', lastSeen: '2026-09-12' }]);
+});
+
+test('reconcileProjectChanges: a gap that disappears becomes "resolved" and is kept, not dropped', () => {
+  const prev = [{ id: 'deps-unused-left-pad', status: 'open', firstSeen: '2026-09-01', lastSeen: '2026-09-10' }];
+  const out = reconcileProjectChanges(prev, [], '2026-09-12');
+  assert.deepEqual(out, [{ id: 'deps-unused-left-pad', status: 'resolved', firstSeen: '2026-09-01', lastSeen: '2026-09-10' }]);
+});
+
+test('reconcileProjectChanges: a resolved gap that comes back is "regressed", then "open" the run after', () => {
+  const resolved = [{ id: 'deps-unused-left-pad', status: 'resolved', firstSeen: '2026-09-01', lastSeen: '2026-09-05' }];
+  const gaps = [{ id: 'deps-unused-left-pad', class: 'project' }];
+  const regressed = reconcileProjectChanges(resolved, gaps, '2026-09-12');
+  assert.deepEqual(regressed, [{ id: 'deps-unused-left-pad', status: 'regressed', firstSeen: '2026-09-01', lastSeen: '2026-09-12' }]);
+
+  const stillPresent = reconcileProjectChanges(regressed, gaps, '2026-09-13');
+  assert.deepEqual(stillPresent, [{ id: 'deps-unused-left-pad', status: 'open', firstSeen: '2026-09-01', lastSeen: '2026-09-13' }]);
+});
+
+test('reconcileProjectChanges: an already-resolved gap that stays absent is left untouched', () => {
+  const prev = [{ id: 'deps-unused-left-pad', status: 'resolved', firstSeen: '2026-09-01', lastSeen: '2026-09-05' }];
+  const out = reconcileProjectChanges(prev, [], '2026-09-12');
+  assert.deepEqual(out, prev);
+});
+
+test('reconcileProjectChanges ignores non-project-class gaps and sorts by id', () => {
+  const gaps = [{ id: 'b-gap', class: 'project' }, { id: 'a-gap', class: 'project' }, { id: 'kind-ambiguous', class: 'human' }];
+  const out = reconcileProjectChanges([], gaps, '2026-09-12');
+  assert.deepEqual(out.map(c => c.id), ['a-gap', 'b-gap']);
+});
+
+test('projectChangesMd renders a status column when reconciled changes are passed, and omits it otherwise', () => {
+  const gaps = buildGaps({ delivery: { requiredChecks: null }, api: { source: 'literals' } });
+  const changes = [{ id: 'api-source-literals', status: 'regressed', firstSeen: '2026-08-01', lastSeen: '2026-09-12' }];
+  const withStatus = projectChangesMd(gaps, changes);
+  assert.match(withStatus, /status: regressed \(first seen: 2026-08-01, last seen: 2026-09-12\)/);
+
+  const withoutStatus = projectChangesMd(gaps);
+  assert.ok(!withoutStatus.includes('status:'));
 });
 
 test('loadAnswers returns {} when the file is missing, and parses JSON when present', () => {
