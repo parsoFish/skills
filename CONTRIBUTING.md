@@ -1,34 +1,82 @@
 # Contributing (to myself)
 
+This file owns skill-authoring detail: case file shapes, grader pitfalls, and versioning
+mechanics. The loop (branch → change → gate → PR → merge), the gate's own contract, and the
+never-dos live in [CLAUDE.md](CLAUDE.md) — this file doesn't repeat them. Install instructions
+live in [README.md](README.md).
+
 ## Layout
+
 ```
 .claude-plugin/{plugin.json,marketplace.json}   plugin + self-hosted marketplace
 skills/<name>/SKILL.md                          ≤ 500 lines, frontmatter: name = folder, description = when to use (third person)
-skills/<name>/references/                       long-form guidance loaded on demand
+skills/<name>/references/                       long-form guidance loaded on demand (≤ 800 lines each)
 skills/<name>/scripts/                          deterministic tooling; every file has a *.test.mjs
-skills/<name>/assets/                           templates, starter files
-evals/<name>/<case>/{case.yaml|prompt.md,graders/*.md}   claude plugin eval cases
-scripts/lint-skills.mjs · tests/                repo plumbing
+skills/<name>/assets/                            templates, starter files
+evals/<name>/<case>/prompt.md                   frontmatter: runs, max_turns, timeout_seconds, allowed_tools
+evals/<name>/<case>/case.yaml                    schema_version "1.1", context.scaffold_script: fixture.sh
+evals/<name>/<case>/fixture.sh                    hermetic scaffold script — no network, ends with `git init` + a commit
+evals/<name>/<case>/graders/*.md                  one grader per file
+scripts/ · tests/                                repo plumbing (gate, attest, report, release, lint, clean)
 ```
 
-## The gate: nothing ships without local agentic validation
-Every added or changed skill goes through `npm run gate` (installed as a git pre-push hook by `npm install` / `npm run hooks:install`; the same command runs in CI on every PR that touches `skills/` or `evals/`):
-1. deterministic — skills lint (incl. forbidden terms and eval coverage), script tests, `claude plugin validate --strict`, Anthropic's skill-creator `quick_validate.py` on each changed skill;
-2. agentic, bounded by `--max-cost-usd` — `claude plugin eval` on the changed skills' cases (threshold 0.8; read the with/without delta, not the score), then a headless structural review (`claude -p`, read-only tools, structured verdict; any critical or major finding fails).
-Prerequisites for the agentic half on this machine: Claude logged in, Anthropic's skill-creator plugin installed, Python with pyyaml, and a sandbox backend for Bash-granting evals (`bubblewrap` + `socat` on Debian/Ubuntu/WSL: `sudo apt-get install -y bubblewrap socat`); the gate names the missing piece instead of reporting a silent zero. `npm run gate:quick` runs only the deterministic half for fast iteration. `SKILLS_GATE_SKIP_AGENTIC=1` is an emergency bypass for a broken harness, never for a failing skill; the report records the skip. The report lands in `evals/gate-report.json` and records a content hash of the changed skills: an identical, already-passed change is not re-billed on the next push (`--force` re-runs). A skipped agentic phase never counts as a pass.
+## Case authoring
+
+- **`fixture.sh` must be hermetic.** No `curl`/`wget`/`npm install`/`pip install`/`git clone`/any
+  `http` URL — a case that needs the network is a case that fails in the eval sandbox. It ends
+  with `git init -q && git add -A && git -c user.name=t -c user.email=t@t commit -qm init` so the
+  run starts from a clean, committed tree.
+- **A `tool_used: Skill` grader scores nothing.** Under with/without ablation it's a with-only
+  indicator ("did the skill fire") — it does not contribute to `score` or `delta`. Every case
+  needs **at least one scored outcome grader** too, or the delta is structurally 0 regardless of
+  how well the skill did.
+- **Graders default to judging the last message only.** A grader that needs to read a produced
+  file must say so explicitly: `focus: {source: file, path: docs/reference/drift.md}`. A `regex`
+  grader with no file `focus` is checking the chat transcript, not the output.
+- **Never write a regex whose pattern already appears in the prompt.** It passes in the
+  without-skill arm too, which means it isn't testing anything — this sank an early drift-eval
+  case where "no drift found" satisfied a grader looking for the word "drift".
+- `file_exists` graders only count files the run itself created, not fixtures already present.
 
 ## Authoring loop
-1. `/skill-creator` to draft; iterate with-skill vs baseline on 2–3 realistic prompts before committing.
-2. Description tuning: the description is the trigger. State what the skill does and the phrases that should fire it, in third person, no angle brackets.
-3. `npm run check` locally. Lint catches: name/folder mismatch, description without a trigger clause, SKILL.md over 500 lines, references over 800 lines, broken relative links.
-4. `plugin-dev` skill-reviewer pass for structure (imperative body, progressive disclosure, dead references).
-5. Eval case: at least one `tool_used: Skill` grader (did it fire) and one outcome grader; run `npm run eval` and read the delta.
-6. `/skill-doctor` occasionally: a skill nobody uses still costs context.
+
+1. Draft with the `skill-creator` skill; iterate with-skill vs. a baseline run on 2–3 realistic
+   prompts before committing to a description.
+2. Description tuning: the description is the trigger. State what the skill does and the phrases
+   that should fire it, in third person, no angle brackets.
+3. `npm run check` locally. Lint catches: name/folder mismatch, description without a trigger
+   clause, `SKILL.md` over 500 lines, `references/` over 800 lines, broken relative links, and a
+   missing eval case.
+4. `plugin-dev`'s `skill-reviewer` pass for structure (imperative body, progressive disclosure, no
+   dead references) — the gate's own headless structural review repeats a stricter version of
+   this on every push, but a local pass first is cheaper.
+5. Write the eval case (see Case authoring above; the `eval-authoring` skill covers the shape end
+   to end). Run `npm run gate:quick` while iterating on everything except the eval case itself,
+   then a full `npm run gate` (detached — see CLAUDE.md) to see the real with/without delta.
+6. `/skill-doctor` occasionally: a skill nobody uses still costs context on every turn.
 
 ## Versioning and distribution
-- `plugin.json` version is semver for the whole plugin; CHANGELOG.md has one line per skill change.
-- Tag releases; the marketplace entry can pin `ref` + `sha` for consumers who want stability. `npx skills add` tracks the branch.
+
+- `plugin.json.version` is the single source of truth for the whole plugin; `claude plugin
+  validate --strict` fails the moment the marketplace entry disagrees with it.
+- `npm run release:bump -- <patch|minor|major>` (`node scripts/release.mjs bump <level>`) is the
+  only supported way to change the version: it updates `plugin.json`, the marketplace entry,
+  `package.json`, and rolls `CHANGELOG.md`'s `## Unreleased` section into a dated one, all
+  together. Never hand-edit a version field.
+- The marketplace entry pins releases as `"source": {"source": "github", "repo": "parsoFish/skills",
+  "ref": "vX.Y.Z"}` — verified against `claude plugin validate --strict`. A `ref` **and** `sha`
+  pair directly on the entry is not a valid field and fails validation; don't reintroduce it.
+- `npx skills add` installs straight from the repository's default branch — it does not track a
+  release tag, so a single-skill consumer always gets the latest commit on `main`, not the latest
+  numbered release.
 - Claude-Code-only frontmatter (`allowed-tools`) stays out of skills meant to be portable.
 
 ## Pitfalls we guard against
-Generic descriptions (never fires / fires on everything) · everything in SKILL.md (context tax on every turn) · reading the score without the with/without delta · evals without `--trust-plugin` and `--max-cost-usd` in CI · Claude-only fields in portable skills.
+
+Generic descriptions (never fires / fires on everything) · everything crammed into `SKILL.md`
+instead of `references/` (context tax on every turn) · reading the score without the with/without
+delta · a `tool_used: Skill` grader mistaken for a scored one · a regex grader with no file `focus`
+silently grading the chat transcript instead of the output · a regex pattern that's just an echo of
+the prompt · Claude-only fields in a portable skill · assuming `claude plugin validate --strict`
+checks `SKILL.md` frontmatter — it validates the manifests only, `npm run lint` is what catches
+that.

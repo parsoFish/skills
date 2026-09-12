@@ -1,0 +1,29 @@
+name: Kit gap
+description: The tooling a skill relies on should have known better — a missing extractor, a dead flag, a wrong claim in a reference doc.
+title: "[kit-gap] "
+labels: ["kit-gap"]
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Where
+      description: file:line, or the skill and script involved.
+    validations:
+      required: true
+  - type: textarea
+    id: gap
+    attributes:
+      label: What the tooling got wrong or couldn't do
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce it
+      description: The exact command or scenario. A finding without a repro is an opinion.
+    validations:
+      required: true
+  - type: textarea
+    id: fix
+    attributes:
+      label: Suggested fix (optional)

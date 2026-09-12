@@ -1,0 +1,56 @@
+name: release
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+      - name: Read plugin version
+        id: version
+        run: |
+          version=$(node -p "require('./.claude-plugin/plugin.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Check whether the release tag already exists
+        id: tagcheck
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/v${VERSION}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Write release notes from the CHANGELOG
+        if: steps.tagcheck.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: node scripts/release.mjs changelog-section "$VERSION" > /tmp/release-notes.md
+      - name: Create the tag
+        if: steps.tagcheck.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git tag "v${VERSION}"
+          git push origin "v${VERSION}"
+      - name: Create the GitHub release
+        if: steps.tagcheck.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if [ -f evals/REPORT.md ]; then
+            gh release create "v${VERSION}" evals/REPORT.md --title "v${VERSION}" --notes-file /tmp/release-notes.md
+          else
+            gh release create "v${VERSION}" --title "v${VERSION}" --notes-file /tmp/release-notes.md
+          fi

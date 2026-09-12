@@ -1,0 +1,35 @@
+name: Skill work
+description: A fully specified change to a skill (new skill, behaviour change, eval case) an agent may start on unattended.
+title: "[skill] "
+labels: ["agent-ready"]
+body:
+  - type: input
+    id: skill
+    attributes:
+      label: Skill
+      description: The skill's folder name under skills/ (or the name to create).
+      placeholder: architecture
+    validations:
+      required: true
+  - type: textarea
+    id: change
+    attributes:
+      label: What should change
+      description: Concrete and scoped enough that an agent can start without asking. Name the trigger phrases if this touches the description.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance
+      description: How to tell the change is done — a case name, a grader, a behaviour to observe.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before this is agent-ready
+      options:
+        - label: The scope is small enough for one PR
+        - label: An eval case exists or is described in "Acceptance" (tool_used:Skill grader + a scored outcome grader)
+        - label: This does not require an owner decision (use "Decision" instead if it does)
