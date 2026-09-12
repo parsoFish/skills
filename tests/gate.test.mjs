@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { changedSkills, evalCoverage, readEvalResult, contentHash, cachedPass, sandboxEnv, harnessProblem } from '../scripts/gate.mjs';
+import { changedSkills, evalCoverage, readEvalResult, contentHash, cachedPass, sandboxEnv, harnessProblem, aggregateEvals } from '../scripts/gate.mjs';
 
 test('changedSkills maps skill and eval paths to skill names, deduplicated and sorted', () => {
   assert.deepEqual(changedSkills(['skills/b/SKILL.md', 'evals/a/case/prompt.md', 'skills/b/scripts/x.mjs', 'README.md', 'scripts/gate.mjs']), ['a', 'b']);
@@ -56,4 +56,11 @@ test('harnessProblem names the machine-side cause and remedy instead of a silent
   const j = { cases: [{ arms: { with: [{ error: 'A shell tool (Bash) was granted but this machine cannot confine it (no sandbox backend)' }] } }] };
   assert.match(harnessProblem(j), /bubblewrap/);
   assert.equal(harnessProblem({ cases: [{ arms: { with: [{ error: null, score: 1 }] } }] }), '');
+});
+
+test('aggregateEvals requires every case to pass and reports the minimum score', () => {
+  const a = aggregateEvals([{ name: 'a', ok: true, exit: 0, score: 1, cases: [{ delta: 1 }] }, { name: 'b', ok: true, exit: 0, score: 0.9, cases: [{ delta: 0.5 }] }]);
+  assert.equal(a.ok, true); assert.equal(a.score, 0.9); assert.deepEqual(a.cases.map(c => c.delta), [1, 0.5]);
+  assert.equal(aggregateEvals([{ name: 'a', ok: true, exit: 0, score: 1 }, { name: 'b', ok: false, exit: 1, score: 0.4 }]).ok, false);
+  assert.equal(aggregateEvals([]).ok, false);
 });

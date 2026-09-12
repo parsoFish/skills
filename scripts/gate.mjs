@@ -69,6 +69,14 @@ export function harnessProblem(json) {
   return `every run errored before the first turn: ${e.slice(0, 160)}`;
 }
 
+/** Pure: every case must pass; overall score = min case score; deltas carried per case. */
+export function aggregateEvals(perCase) {
+  if (!perCase.length) return { ok: false, score: null, cases: [] };
+  const ok = perCase.every(c => c.ok && c.exit === 0);
+  const score = Math.min(...perCase.map(c => c.score ?? 0));
+  return { ok, score, threshold: 0.8, cases: perCase.map(c => ({ name: c.name, score: c.score, delta: c.cases?.[0]?.delta ?? null, exit: c.exit })) };
+}
+
 export function locateQuickValidate() {
   const home = process.env.HOME ?? '';
   const candidates = [
@@ -128,13 +136,21 @@ function main() {
   const cap = flag('--max-cost-usd', '5');
   const jsonPath = join(ROOT, 'evals', 'gate-eval.json');
   const evalModel = flag('--eval-model', 'claude-sonnet-5'); const judge = flag('--judge-model', 'claude-haiku-4-5');
-  const argv = ['plugin', 'eval', '.', '--trust-plugin', '--scaffold', '--allow-tools', 'Bash', 'Write', 'Edit', '--json', jsonPath, '--threshold', '0.8', '--max-cost-usd', cap, '--no-publish', '--model', evalModel, '--judge-model', judge, ...changed.flatMap(s => caseNames(ROOT, s)).flatMap(c => ['--case', c])];
-  r = sh('claude', argv, { env: sandboxEnv() });
-  let ev = { ok: false, score: null };
+  // `claude plugin eval` honours one --case, so run each case separately and aggregate: every case must pass the threshold.
+  const cases = changed.flatMap(s => caseNames(ROOT, s).map(c => ({ skill: s, name: c })));
+  const perCase = [];
   let harness = '';
-  try { const j = JSON.parse(readFileSync(jsonPath, 'utf8')); ev = readEvalResult(j); harness = harnessProblem(j); } catch {}
+  for (const c of cases) {
+    const jsonPath = join(ROOT, 'evals', `gate-eval-${c.name}.json`);
+    const argv = ['plugin', 'eval', '.', '--trust-plugin', '--scaffold', '--allow-tools', 'Bash', 'Write', 'Edit', '--json', jsonPath, '--threshold', '0.8', '--max-cost-usd', cap, '--no-publish', '--model', evalModel, '--judge-model', judge, '--case', c.name];
+    r = sh('claude', argv, { env: sandboxEnv() });
+    let ev = { ok: false, score: null, cases: [] };
+    try { const j = JSON.parse(readFileSync(jsonPath, 'utf8')); ev = readEvalResult(j); harness = harness || harnessProblem(j); } catch {}
+    perCase.push({ ...c, exit: r.status, ...ev });
+  }
+  const ev = aggregateEvals(perCase);
   if (harness) { step(`claude plugin eval (${changed.join(', ')})`, false, `HARNESS: ${harness}`); report.eval = ev; report.harness = harness; return finish(report); }
-  step(`claude plugin eval (${changed.join(', ')})`, r.status === 0 && ev.ok, `exit ${r.status} · score ${ev.score ?? '?'} · ${ev.cases?.map(c => `${c.name} ${c.score ?? '?'}${c.delta != null ? ' Δ' + c.delta : ''}`).join(', ') ?? ''}`);
+  step(`claude plugin eval (${cases.length} case${cases.length === 1 ? '' : 's'})`, ev.ok, `${perCase.map(c => `${c.name} ${c.score ?? '?'}${c.cases?.[0]?.delta != null ? ' Δ' + c.cases[0].delta : ''}${c.exit ? ' exit ' + c.exit : ''}`).join(' · ')}`);
   report.eval = ev;
 
   if (!has('--no-review')) for (const s of changed) {

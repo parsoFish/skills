@@ -31,7 +31,7 @@
   {
    "name": "claude plugin eval (architecture)",
    "ok": true,
-   "detail": "exit 0 · score 1 · document-a-ts-monorepo 1 Δ1"
+   "detail": "exit 0 · score 1 · drift-catches-a-new-edge 1 Δ0.5"
   },
   {
    "name": "structural review architecture",
@@ -40,7 +40,7 @@
   }
  ],
  "ok": true,
- "contentHash": "8e42d34183523adb13b95b0b47b4824b4c7d42c6e884ce81f9a00cc0d28fb44f",
+ "contentHash": "4cf6a768296ebb44a1e29e8f179550d8d6c0255803c14252e0cc4c15ec5795e4",
  "agenticRan": true,
  "eval": {
   "ok": true,
@@ -48,9 +48,9 @@
   "threshold": 0.8,
   "cases": [
    {
-    "name": "document-a-ts-monorepo",
+    "name": "drift-catches-a-new-edge",
     "score": 1,
-    "delta": 1
+    "delta": 0.5
    }
   ]
  },

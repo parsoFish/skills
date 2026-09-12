@@ -3,6 +3,7 @@
 .DS_Store
 /tmp/
 evals/**/runs/
+evals/gate-eval-*.json
 evals/gate-eval.json
 evals/results.json
 evals/results/
