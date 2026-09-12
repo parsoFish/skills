@@ -4,8 +4,8 @@
  "attested": true,
  "agenticRan": true,
  "bypass": null,
- "generatedAt": "2026-09-12T18:02:11.322Z",
- "commit": "0c6979227a67bd4312752461612db1283499377d",
+ "generatedAt": "2026-09-12T18:09:25.228Z",
+ "commit": "3e45e70135f1a92d0441c76c5c7725dd3f5bca6b",
  "claudeVersion": "2.1.269",
  "pluginVersion": "0.2.0",
  "scope": {
@@ -158,25 +158,25 @@
   "architecture": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.28811800000000004
+   "costUsd": 0.34471349999999995
   },
   "eval-authoring": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.09783120000000001
+   "costUsd": 0.13058720000000001
   },
   "skill-dev": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.10829540000000001
+   "costUsd": 0.1171436
   }
  },
  "totals": {
-  "costUsd": 6.261671999999999,
+  "costUsd": 6.359871699999999,
   "durationSeconds": 2012
  },
  "skillsDigest": "d701aa223cf93ae9602f03d9dc521361f5c46ec8bdb680f753a43d915057892f",
- "harnessDigest": "6cfd4266b7e9a00bece315cc1afc4ed57ba0c1d9d102d40a4c275a27215a0b02",
+ "harnessDigest": "aa18934185e1d71dc95ee7061283005b6b4b2c3373a42d14b3066501cd5bdbd2",
  "reusedEvals": [
   "document-a-terraform-repo",
   "document-a-ts-monorepo",
