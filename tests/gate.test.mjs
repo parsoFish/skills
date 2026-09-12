@@ -106,3 +106,11 @@ test('gate.mjs hands runAgentic the same meta keys it destructures (a rename her
   const sig = agentic.match(/export async function runAgentic\(\{([^}]*)\}/)[1].split(',').map(s => s.trim());
   for (const key of ['commit', 'claudeVersion', 'pluginVersion']) assert.ok(sig.includes(key), `runAgentic must destructure ${key}`);
 });
+
+test('--verify-only never writes evals/gate-report.json: a failing deterministic step in the hook must not clobber the tracked attestation', () => {
+  const src = readFileSync(new URL('../scripts/gate.mjs', import.meta.url), 'utf8');
+  assert.match(src, /const record = report => \{ if \(!args\.verifyOnly\) writeReportFile/);
+  const failBlocks = src.split('if (!det.ok) {')[1].split('}')[0];
+  assert.ok(failBlocks.includes('record('), 'deterministic failure path must go through record()');
+  assert.ok(!failBlocks.includes('writeReportFile('), 'deterministic failure path must not call writeReportFile directly');
+});

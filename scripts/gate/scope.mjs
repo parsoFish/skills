@@ -53,17 +53,18 @@ export function changedPaths(root, base) {
   return [...committed.split('\n'), ...uncommitted.split('\n'), ...untracked.split('\n')].map(s => s.trim()).filter(Boolean);
 }
 
-/** Pure: which skills do these changed paths touch? */
-export function changedSkills(paths) {
+/** Pure: which skills do these changed paths touch? `knownSkills` (the directories under skills/)
+ * keeps evals/ housekeeping — evals/attest, evals/results, evals/REPORT.md — from reading as a skill. */
+export function changedSkills(paths, knownSkills = null) {
   const out = new Set();
   for (const p of paths) {
     const m = p.match(/^(?:skills|evals)\/([^/]+)\//);
-    if (m) out.add(m[1]);
+    if (m && (knownSkills === null || knownSkills.includes(m[1]))) out.add(m[1]);
   }
   return [...out].sort();
 }
 
 /** Pure: split changed paths into { skills, harness }. */
-export function changedScope(paths) {
-  return { skills: changedSkills(paths), harness: paths.some(p => HARNESS_RE.test(p)) };
+export function changedScope(paths, knownSkills = null) {
+  return { skills: changedSkills(paths, knownSkills), harness: paths.some(p => HARNESS_RE.test(p)) };
 }

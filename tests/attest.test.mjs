@@ -446,3 +446,9 @@ test('release-discipline checks are skipped entirely when the diff never touches
   writeReportFile(root, report);
   assert.deepEqual(verify(root, { base: baseSha, now, config: CONFIG }), { ok: true, reasons: [] });
 });
+
+test('changedSkillNames never reads evals/attest or evals/results as a skill', async () => {
+  const { changedSkillNames } = await import('../scripts/attest/git.mjs');
+  assert.deepEqual(changedSkillNames(['evals/attest/a.json', 'evals/results/x/report.html'], ['architecture']), []);
+  assert.deepEqual(changedSkillNames(['evals/architecture/c/prompt.md', 'evals/attest/a.json'], ['architecture']), ['architecture']);
+});

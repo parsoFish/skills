@@ -66,8 +66,10 @@ export function diffFile(root, base, head, path) {
 }
 
 /** Pure: which skill (skills/<name>/... or evals/<name>/...) each changed path belongs to, deduplicated and sorted. */
-export function changedSkillNames(paths) {
+/** Skill names touched by these paths, restricted to directories that exist under skills/ so that
+ * evals/attest, evals/results and friends never read as a skill named "attest". */
+export function changedSkillNames(paths, knownSkills = null) {
   const out = new Set();
-  for (const p of paths) { const m = p.match(/^(?:skills|evals)\/([^/]+)\//); if (m) out.add(m[1]); }
+  for (const p of paths) { const m = p.match(/^(?:skills|evals)\/([^/]+)\//); if (m && (knownSkills === null || knownSkills.includes(m[1]))) out.add(m[1]); }
   return [...out].sort();
 }

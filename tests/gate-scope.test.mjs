@@ -104,3 +104,10 @@ test('changedPaths against the empty-tree sentinel treats every tracked path as 
   const paths = changedPaths(root, EMPTY_TREE_SHA);
   assert.ok(paths.includes('a.txt'));
 });
+
+test('changedSkills ignores evals/ housekeeping dirs when told which skills exist', () => {
+  const known = ['architecture', 'skill-dev'];
+  assert.deepEqual(changedSkills(['evals/attest/x.json', 'evals/results/r/report.html', 'evals/REPORT.md'], known), []);
+  assert.deepEqual(changedSkills(['evals/attest/x.json', 'evals/architecture/c/prompt.md', 'skills/skill-dev/SKILL.md'], known), ['architecture', 'skill-dev']);
+  assert.deepEqual(changedScope(['evals/attest/x.json'], known), { skills: [], harness: false });
+});

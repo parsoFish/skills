@@ -72,7 +72,7 @@ async function main() {
 
   let scope;
   if (args.all) scope = { skills: readdirSync(join(ROOT, 'skills')), harness: true };
-  else scope = changedScope(changedPaths(ROOT, resolveBase(args.base, createGit(ROOT))));
+  else scope = changedScope(changedPaths(ROOT, resolveBase(args.base, createGit(ROOT))), readdirSync(join(ROOT, 'skills')));
 
   const envSkip = process.env.SKILLS_GATE_SKIP_AGENTIC === '1';
   const bypassReason = process.env.SKILLS_GATE_BYPASS_REASON || null;
@@ -81,15 +81,17 @@ async function main() {
   const pre = preDeterministicRoute({ scope, envSkip, bypassReason, args });
   if (pre === 'noop') { console.log('gate: nothing changed — skipping (report left untouched)'); process.exitCode = 0; return; }
   console.log(scope.skills.length ? `gate: changed skills → ${scope.skills.join(', ')}` : 'gate: no skill changed — deterministic checks only, attestation untouched');
+  // --verify-only judges the tracked attestation; it must never overwrite it, even when it fails.
+  const record = report => { if (!args.verifyOnly) writeReportFile(ROOT, report); };
   if (pre === 'misuse') {
-    writeReportFile(ROOT, baseReport({ scope, steps: [{ name: 'agentic phase', ok: false, detail: 'SKILLS_GATE_SKIP_AGENTIC=1 without SKILLS_GATE_BYPASS_REASON' }], ok: false, ...meta }));
+    record(baseReport({ scope, steps: [{ name: 'agentic phase', ok: false, detail: 'SKILLS_GATE_SKIP_AGENTIC=1 without SKILLS_GATE_BYPASS_REASON' }], ok: false, ...meta }));
     return printFail('agentic phase');
   }
 
   const det = runDeterministicChecks({ root: ROOT, scope, sh });
   for (const s of det.steps) console.log(`${s.ok ? 'ok  ' : 'FAIL'} ${s.name}${s.detail ? ' — ' + s.detail.split('\n')[0] : ''}`);
   if (!det.ok) {
-    writeReportFile(ROOT, baseReport({ scope, steps: det.steps, ok: false, ...meta }));
+    record(baseReport({ scope, steps: det.steps, ok: false, ...meta }));
     return printFail(det.steps.find(s => !s.ok).name);
   }
 

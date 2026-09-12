@@ -5,7 +5,7 @@
 // and how to fix it.
 // Usage: node scripts/attest.mjs verify [--base <ref>]
 //        node scripts/attest.mjs digest
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { skillsDigest, harnessDigest, dirtyPaths } from './attest/digest.mjs';
@@ -35,7 +35,8 @@ export function verify(root, { base = 'origin/main', now = new Date(), config } 
   const reasons = [...checkAttestationFlags(report), ...checkDigests(root, report), ...checkAncestor(root, report)];
 
   const changedPaths = diffNameOnly(root, base, 'HEAD');
-  for (const skill of changedSkillNames(changedPaths)) reasons.push(...checkSkillCoverage(root, report, skill));
+  const knownSkills = existsSync(join(root, 'skills')) ? readdirSync(join(root, 'skills')) : [];
+  for (const skill of changedSkillNames(changedPaths, knownSkills)) reasons.push(...checkSkillCoverage(root, report, skill));
 
   reasons.push(...checkFreshness(report, now, cfg.maxAttestationAgeDays));
   reasons.push(...checkReleaseDiscipline(root, base, 'HEAD', changedPaths));
