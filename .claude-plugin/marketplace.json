@@ -1,13 +1,19 @@
 {
   "name": "parso-skills",
   "description": "Personal skills collection — install individual skills or the whole plugin",
-  "owner": { "name": "David Parsonson" },
+  "owner": {
+    "name": "David Parsonson"
+  },
   "plugins": [
     {
       "name": "parso-skills",
       "description": "All skills in this repo",
-      "source": "./",
-      "version": "0.1.0"
+      "source": {
+        "source": "github",
+        "repo": "parsoFish/skills",
+        "ref": "v0.2.0"
+      },
+      "version": "0.2.0"
     }
   ]
 }
