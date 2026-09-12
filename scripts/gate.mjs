@@ -104,7 +104,7 @@ function main() {
     changed = changedSkills(diff.split('\n').filter(Boolean));
   }
   report.changed = changed;
-  if (!changed.length) { console.log('gate: no skill changed — nothing to validate'); return finish(report); }
+  if (!changed.length) { console.log('gate: no skill changed — nothing to validate (report left untouched)'); process.exitCode = 0; return; }
   console.log(`gate: changed skills → ${changed.join(', ')}`);
 
   // 1 deterministic
