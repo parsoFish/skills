@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: adds-a-csv-to-table-skill
+description: Add a brand-new skill to a skills repository end to end — SKILL.md, a scripted helper with its test, and an eval case — and stop once the repo's deterministic gate passes.
+context:
+  scaffold_script: fixture.sh
