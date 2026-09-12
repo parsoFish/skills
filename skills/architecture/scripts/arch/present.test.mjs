@@ -2,12 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { indexMd } from './present.mjs';
 
-test('renders views first as image links with captions derived from the view name', () => {
-  const md = indexMd({ views: ['context.png', 'component-drift.png'] });
+test('renders views first as image links; known views get house captions, others read as scenarios', () => {
+  const md = indexMd({ views: ['index.png', 'pr-path.png'] });
   assert.match(md, /## Views/);
-  assert.match(md, /!\[Context\]\(\.\.\/\.\.\/reference\/views\/context\.png\)/);
-  assert.match(md, /\*Context\*/);
-  assert.match(md, /!\[Component Drift\]\(\.\.\/\.\.\/reference\/views\/component-drift\.png\)/);
+  assert.match(md, /!\[System context[^\]]*\]\(\.\.\/\.\.\/reference\/views\/index\.png\)/);
+  assert.match(md, /\*System context/);
+  assert.match(md, /!\[Scenario — Pr Path\]\(\.\.\/\.\.\/reference\/views\/pr-path\.png\)/);
 });
 
 test('lists written docs, then generated docs, then interview and review, in that order', () => {

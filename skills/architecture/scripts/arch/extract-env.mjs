@@ -1,12 +1,11 @@
 // Extract environment variable reads from production source (JS/TS/Go/Python).
 // Deterministic, read-only, no lib.
-import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { walkFiles, isTestPath } from './walk.mjs';
 
-const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next']);
-const CODE_EXT = /\.(ts|tsx|js|mjs|go|py)$/;
-const TEST_PATH = /(^|\/)(tests?|__tests__)(\/|$)|\.test\./;
 const SECRET_RE = /TOKEN|SECRET|KEY|PASSWORD|AUTH/i;
+const CODE_EXTS = ['.ts', '.tsx', '.js', '.mjs', '.go', '.py'];
 
 const PATTERN_SOURCES = [
   'process\\.env\\.([A-Z_][A-Z0-9_]*)',
@@ -16,32 +15,13 @@ const PATTERN_SOURCES = [
   '(?<![.\\w])env\\.([A-Z_][A-Z0-9_]*)',
 ];
 
-function toPosix(p) { return p.split(sep).join('/'); }
-
-function collectFiles(root, cap) {
-  const out = [];
-  function walk(dir) {
-    if (out.length >= cap) return;
-    let entries;
-    try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
-    for (const e of entries) {
-      if (out.length >= cap) return;
-      if (SKIP_DIRS.has(e.name)) continue;
-      const p = join(dir, e.name);
-      if (e.isDirectory()) walk(p); else out.push(p);
-    }
-  }
-  walk(root);
-  return out;
-}
-
 /** Env vars read in production source, with up to 3 file:line sites each and secret-like names flagged. */
-export function extractEnv(root) {
-  const files = collectFiles(root, 20000).filter(f => CODE_EXT.test(f) && !TEST_PATH.test(toPosix(relative(root, f))));
+export function extractEnv(root, opts = {}) {
+  const { ignore = [] } = opts;
+  const files = walkFiles(root, { ignore, exts: CODE_EXTS }).filter(f => !isTestPath(f));
   const vars = new Map();
-  for (const f of files) {
-    const rel = toPosix(relative(root, f));
-    let text; try { text = readFileSync(f, 'utf8'); } catch { continue; }
+  for (const rel of files) {
+    let text; try { text = readFileSync(join(root, rel), 'utf8'); } catch { continue; }
     const lines = text.split(/\r?\n/);
     for (let i = 0; i < lines.length; i++) {
       for (const src of PATTERN_SOURCES) {

@@ -1,31 +1,15 @@
 // Extract the test inventory: counts per top-level dir plus @seam/@layer tag adoption.
 // Deterministic, read-only, no lib.
-import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { walkFiles } from './walk.mjs';
 
-const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next']);
+// This extractor's own test-file definition (its inventory purpose), distinct from walk.mjs's
+// broader isTestPath (used elsewhere to exclude test-adjacent content — stories, fixtures —
+// from production-code scans): a story or fixture is not a "test" for this inventory.
 const TEST_FILE = /\.(test|spec)\.[^/]+$/;
 const TEST_DIR = /(^|\/)(tests?|__tests__)(\/|$)/;
 const LAYERS = ['unit', 'contract', 'journey', 'ground'];
-
-function toPosix(p) { return p.split(sep).join('/'); }
-
-function collectFiles(root, cap) {
-  const out = [];
-  function walk(dir) {
-    if (out.length >= cap) return;
-    let entries;
-    try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
-    for (const e of entries) {
-      if (out.length >= cap) return;
-      if (SKIP_DIRS.has(e.name)) continue;
-      const p = join(dir, e.name);
-      if (e.isDirectory()) walk(p); else out.push(p);
-    }
-  }
-  walk(root);
-  return out;
-}
 
 function isTestFile(rel) { return TEST_FILE.test(rel) || TEST_DIR.test(rel); }
 
@@ -36,8 +20,9 @@ function topDir(rel) {
 }
 
 /** Test inventory: file counts per top-level dir, plus @seam/@layer tag coverage. */
-export function extractTests(root) {
-  const relFiles = collectFiles(root, 20000).map(f => toPosix(relative(root, f))).filter(isTestFile);
+export function extractTests(root, opts = {}) {
+  const { ignore = [] } = opts;
+  const relFiles = walkFiles(root, { ignore }).filter(isTestFile);
   const total = relFiles.length;
 
   const dirCount = new Map();

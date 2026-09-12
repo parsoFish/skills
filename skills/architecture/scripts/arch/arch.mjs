@@ -69,7 +69,8 @@ export function handEdgesFromC4(text, systemId) {
 const mdFiles = dir => existsSync(dir) ? readdirSync(dir).filter(f => f.endsWith('.md')).length : 0;
 
 function extractorTable(rules) {
-  return { components: () => extractComponents(rules), deps: () => extractDeps(root), delivery: () => extractDelivery(root), 'ext-points': () => extractExtPoints(root, rules.registries), api: () => extractApi(root), tests: () => extractTests(root), env: () => extractEnv(root), ui: () => extractUi(root) };
+  const o = { ignore: rules.scanIgnore ?? [] };
+  return { components: () => extractComponents(rules), deps: () => extractDeps(root, o), delivery: () => extractDelivery(root, o), 'ext-points': () => extractExtPoints(root, rules.registries, o), api: () => extractApi(root, o), tests: () => extractTests(root, o), env: () => extractEnv(root, o), ui: () => extractUi(root, o) };
 }
 
 function run() {
@@ -99,26 +100,29 @@ function run() {
   }
   const completeness = evaluate(docsDir, JSON.parse(readFileSync(join(here, '..', '..', 'references', 'completeness.json'), 'utf8')), { retired: rules.retired ?? [] });
   write(join(P.ref, 'completeness.json'), JSON.stringify(completeness, null, 1));
+  const at = (cond, where) => (cond ? where : false);
   const present = {
-    context: views.includes('index.png') || existsSync(handPath), component: true, deployment: views.includes('deployment.png'),
-    scenarios: mdFiles(join(P.arch, 'scenarios')) > 0, catalogue: existsSync(join(P.ref, 'events')), api: api.source === 'openapi' ? true : api.paths?.length ? 'partial' : false,
-    'module-graph': existsSync(join(P.ref, 'infra')), adrs: existsSync(join(docsDir, 'decisions')), risks: existsSync(join(P.arch, 'risks.md')),
-    'screen-flow': mdFiles(join(P.arch, 'journeys')) > 0, loop: existsSync(join(P.arch, 'loop.md')), 'device-topology': views.includes('deployment.png'),
-    'extension-points': (ext.points?.length ?? 0) > 0, signals: existsSync(join(P.arch, 'signals.md')), pipeline: (delivery.workflows?.length ?? 0) > 0,
-    credential: existsSync(join(P.arch, 'secrets.md')), deps: true, 'job-dag': existsSync(join(P.ref, 'pipeline.md')), 'data-contracts': existsSync(join(P.ref, 'data')),
-    tests: tests.taggingAdopted ? true : tests.total > 0 ? 'partial' : false, stakeholders: existsSync(join(P.arch, 'stakeholders.md')), rules: true,
+    context: at(views.includes('index.png') || existsSync(handPath), 'reference/views/index.png'), component: 'reference/components.md', deployment: at(views.includes('deployment.png'), 'reference/views/deployment.png'),
+    scenarios: at(mdFiles(join(P.arch, 'scenarios')) > 0, 'architecture/scenarios/'), catalogue: at(existsSync(join(P.ref, 'events')), 'reference/events/'), api: api.source === 'openapi' ? 'reference/api.md' : api.paths?.length ? 'partial' : false,
+    'module-graph': at(existsSync(join(P.ref, 'infra')), 'reference/infra/'), adrs: at(existsSync(join(docsDir, 'decisions')), 'decisions/'), risks: at(existsSync(join(P.arch, 'risks.md')), 'architecture/risks.md'),
+    'screen-flow': at(mdFiles(join(P.arch, 'journeys')) > 0, 'architecture/journeys/'), loop: at(existsSync(join(P.arch, 'loop.md')), 'architecture/loop.md'), 'device-topology': at(views.includes('deployment.png'), 'reference/views/deployment.png'),
+    'extension-points': at((ext.points ?? []).some(x => x.count > 0), 'reference/extension-points.md'), signals: at(existsSync(join(P.arch, 'signals.md')), 'architecture/signals.md'), pipeline: at((delivery.workflows?.length ?? 0) > 0, 'reference/delivery.md'),
+    credential: at(existsSync(join(P.arch, 'secrets.md')), 'architecture/secrets.md'), deps: 'reference/deps.md', 'job-dag': at(existsSync(join(P.ref, 'pipeline.md')), 'reference/pipeline.md'), 'data-contracts': at(existsSync(join(P.ref, 'data')), 'reference/data/'),
+    tests: tests.taggingAdopted ? 'reference/tests-by-seam.md' : tests.total > 0 ? 'partial' : false, stakeholders: at(existsSync(join(P.arch, 'stakeholders.md')), 'architecture/stakeholders.md'), rules: 'reference/fitness.md',
   };
   write(join(P.arch, 'CHECKLIST.md'), checklistMd(kinds.kinds, present));
   const fitness = check(docsDir, { retired: rules.retired ?? [] }); emit('fitness', fitness, 'check');
   const gaps = buildGaps({ classify: kinds, components, drift: d, deps, delivery, api, tests, env, completeness });
   write(join(P.run, 'gaps.json'), JSON.stringify(gaps, null, 1));
   const answers = loadAnswers(join(P.arch, 'answers.json'));
-  write(join(P.run, 'interview.md'), interviewMd(gaps, answers));
+  write(join(P.run, 'questions.md'), interviewMd(gaps, answers)); // kit questions; stage 2 curates them into interview.md
   write(join(P.run, 'kit-issues.md'), kitIssuesMd(gaps));
   write(join(P.run, 'project-changes.md'), projectChangesMd(gaps));
-  const written = ['overview.md', 'loop.md', 'signals.md', 'secrets.md', 'risks.md', 'stakeholders.md', 'glossary.md', 'CHECKLIST.md'].filter(f => existsSync(join(P.arch, f))).map(f => `../${f}`);
+  const written = ['overview.md', 'loop.md', 'signals.md', 'secrets.md', 'risks.md', 'stakeholders.md', 'glossary.md', 'deps.md', 'CHECKLIST.md'].filter(f => existsSync(join(P.arch, f))).map(f => `../${f}`)
+    .concat(['scenarios', 'journeys'].flatMap(d => existsSync(join(P.arch, d)) ? readdirSync(join(P.arch, d)).filter(f => f.endsWith('.md')).sort().map(f => `../${d}/${f}`) : []));
   const generated = readdirSync(P.ref).filter(f => f.endsWith('.md')).sort().map(f => `../../reference/${f}`);
-  write(join(P.run, 'index.md'), indexMd({ views: views.map(v => `../../reference/views/${v}`), written, generated, interviewPath: 'interview.md', reviewPath: 'review.md' }));
+  const interviewPath = existsSync(join(P.run, 'interview.md')) ? 'interview.md' : 'questions.md';
+  write(join(P.run, 'index.md'), indexMd({ views, written, generated, interviewPath, reviewPath: existsSync(join(P.run, 'review.md')) ? 'review.md' : undefined }));
   const byClass = ['kit', 'project', 'human'].map(c => `${c} ${gaps.filter(g => g.class === c).length}`).join(' · ');
   write(join(P.run, 'run.md'), ['generated by arch run', '', `kinds: ${kinds.kinds.join(' + ')}${kinds.ambiguous ? ' (ambiguous)' : ''}`, `components: ${components.nodes.length} · edges: ${components.edges.length} · cycles: ${components.cycles.length}`, `views rendered: ${views.length}`, `gaps: ${gaps.length} (${byClass})`, '', ...notes.map(n => `- ${n}`)].join('\n'));
   console.log(`kinds ${kinds.kinds.join('+')} · ${components.nodes.length} components · ${components.edges.length} edges · ${components.cycles.length} cycles · ${views.length} views · ${gaps.length} gaps → ${docsDir}`);

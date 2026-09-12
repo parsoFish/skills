@@ -84,7 +84,14 @@ export function buildGaps(inputs = {}) {
   const { classify, components, drift, deps, delivery, api, tests, env, completeness } = inputs;
   const gaps = [];
   if (classify?.ambiguous) gaps.push(GAPS.kindAmbiguous(classify));
-  for (const c of components?.cycles ?? []) gaps.push(GAPS.importCycle(c));
+  const cyc = components?.cycles ?? [];
+  if (cyc.length === 1) gaps.push(GAPS.importCycle(cyc[0]));
+  else if (cyc.length > 1) gaps.push(gap({
+    id: 'import-cycles', class: 'human', title: `${cyc.length} import cycles between components`,
+    finding: `Two-way imports: ${cyc.map(c => `${c.a}⇄${c.b} (${c.ab}/${c.ba})`).join(', ')}.`,
+    evidence: ['docs/reference/components.json cycles', 'docs/reference/components.md'],
+    options: ['accept all by ADR and add them to the allow-graph', 'accept the heaviest, split the rest', 'split all'], default: 'accept all by ADR', changes: ['docs/decisions/', 'arch rules (no-cycle rule after the ruling)'],
+  }));
   for (const e of drift?.edges?.inHandNotCode ?? []) gaps.push(GAPS.drift(e));
   for (const name of unusedDepEntries(deps)) gaps.push(GAPS.depsUnused(name));
   const missingWhy = missingWhyEntries(deps);

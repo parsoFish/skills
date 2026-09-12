@@ -73,3 +73,23 @@ test('import sites and test files/node_modules are excluded from grep', () => {
   const r = extractDeps(root);
   assert.equal(r.deps[0].unused, true);
 });
+
+test('opts.ignore excludes a directory from the import-site scan', () => {
+  const root = project({
+    'package.json': JSON.stringify({ dependencies: { zod: '^3.0.0' } }),
+    'vendor/src/index.ts': "import { z } from 'zod'\n",
+  });
+  const r = extractDeps(root, { ignore: ['vendor'] });
+  assert.equal(r.deps[0].unused, true);
+  assert.deepEqual(r.deps[0].importSites, []);
+});
+
+test('up to 8 import sites are collected; why names the first and counts the rest', () => {
+  const files = { 'package.json': JSON.stringify({ dependencies: { zod: '^3.0.0' } }) };
+  for (let i = 0; i < 9; i++) files[`src/f${i}.ts`] = "import { z } from 'zod'\n";
+  const root = project(files);
+  const r = extractDeps(root);
+  const zod = r.deps[0];
+  assert.equal(zod.importSites.length, 8);
+  assert.equal(zod.why, `imported by ${zod.importSites[0]} (+7 more)`);
+});

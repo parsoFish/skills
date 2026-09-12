@@ -1,7 +1,8 @@
 // Extract delivery pipelines: GitHub Actions workflows (minimal line-based YAML subset parser,
 // no YAML lib) plus Makefile deploy/apply/plan targets. Deterministic, read-only.
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { walkFiles } from './walk.mjs';
 
 function leadingSpaces(s) { return s.match(/^ */)[0].length; }
 function stripQuotes(s) { return s.replace(/^['"]|['"]$/g, ''); }
@@ -107,13 +108,15 @@ function parseMakeTargets(text) {
   return [...new Set(targets)].sort();
 }
 
+const WORKFLOWS_PREFIX = '.github/workflows/';
+
 /** GitHub Actions workflows + Makefile deploy/apply/plan targets. */
-export function extractDelivery(root) {
+export function extractDelivery(root, opts = {}) {
+  const { ignore = [] } = opts;
   const notes = [];
-  const wfDir = join(root, '.github', 'workflows');
-  const files = existsSync(wfDir) ? readdirSync(wfDir).filter(f => /\.ya?ml$/.test(f)).sort() : [];
+  const files = walkFiles(root, { ignore, exts: ['.yml', '.yaml'] }).filter(f => f.startsWith(WORKFLOWS_PREFIX)).sort();
   if (!files.length) notes.push('no .github/workflows found');
-  const workflows = files.map(f => parseWorkflow(`.github/workflows/${f}`, readFileSync(join(wfDir, f), 'utf8')));
+  const workflows = files.map(f => parseWorkflow(f, readFileSync(join(root, f), 'utf8')));
 
   const makefilePath = join(root, 'Makefile');
   if (existsSync(makefilePath)) {

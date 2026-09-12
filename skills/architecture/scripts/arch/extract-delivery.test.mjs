@@ -78,3 +78,10 @@ test('missing workflows dir is noted, not thrown', () => {
   assert.deepEqual(r.workflows, []);
   assert.ok(r.notes.includes('no .github/workflows found'));
 });
+
+test('opts.ignore excludes .github/workflows from being scanned', () => {
+  const root = project({ '.github/workflows/ci.yml': 'on: push\njobs:\n  x:\n    runs-on: ubuntu-latest\n' });
+  const r = extractDelivery(root, { ignore: ['.github'] });
+  assert.deepEqual(r.workflows, []);
+  assert.ok(r.notes.includes('no .github/workflows found'));
+});

@@ -1,29 +1,8 @@
 // Extract UI anchors: routes (Next app/pages router, React Router, Express) and data-* attribute
 // names. Deterministic, read-only, no lib.
-import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
-
-const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next']);
-const TEST_PATH = /(^|\/)(tests?|__tests__)(\/|$)|\.test\./;
-
-function toPosix(p) { return p.split(sep).join('/'); }
-
-function collectFiles(root, cap) {
-  const out = [];
-  function walk(dir) {
-    if (out.length >= cap) return;
-    let entries;
-    try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
-    for (const e of entries) {
-      if (out.length >= cap) return;
-      if (SKIP_DIRS.has(e.name)) continue;
-      const p = join(dir, e.name);
-      if (e.isDirectory()) walk(p); else out.push(p);
-    }
-  }
-  walk(root);
-  return out;
-}
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { walkFiles, isTestPath } from './walk.mjs';
 
 function dynamicSeg(s) { const m = s.match(/^\[(\.\.\.)?([^\]]+)\]$/); return m ? ':' + m[2] : s; }
 
@@ -55,8 +34,9 @@ function literalRoutes(text) {
 }
 
 /** UI routes (Next app/pages router, React Router, Express) and data-* attribute usage. */
-export function extractUi(root) {
-  const files = collectFiles(root, 20000).map(f => ({ abs: f, rel: toPosix(relative(root, f)) })).filter(f => !TEST_PATH.test(f.rel));
+export function extractUi(root, opts = {}) {
+  const { ignore = [] } = opts;
+  const files = walkFiles(root, { ignore }).filter(rel => !isTestPath(rel)).map(rel => ({ abs: join(root, rel), rel }));
 
   const routeSet = new Set();
   const routes = [];

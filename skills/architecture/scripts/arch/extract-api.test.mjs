@@ -43,3 +43,9 @@ test('no openapi doc and no production files notes it', () => {
   assert.deepEqual(r.paths, []);
   assert.ok(r.notes.includes('no production .ts/.tsx/.js files found'));
 });
+
+test('opts.ignore excludes a directory from the literal-grep scan', () => {
+  const root = project({ 'vendor/src/routes.ts': "fetch('/api/users')\n" });
+  const r = extractApi(root, { ignore: ['vendor'] });
+  assert.deepEqual(r.paths, []);
+});

@@ -10,5 +10,6 @@
     { "match": "^src/[^/]+$", "component": "root" }
   ],
   "registries": [],
+  "scanIgnore": [],
   "minorEdgeThreshold": 5
 }

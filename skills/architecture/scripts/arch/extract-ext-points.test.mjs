@@ -55,3 +55,10 @@ test('node_modules and .git are never walked', () => {
   const r = extractExtPoints(root, [{ name: 'plugin', glob: 'plugins/*' }]);
   assert.equal(r.points[0].count, 0);
 });
+
+test('opts.ignore excludes a top-level directory from the registry scan', () => {
+  const root = project({ 'archive/plugins/one/plugin.json': '', 'plugins/two/plugin.json': '' });
+  const r = extractExtPoints(root, [{ name: 'plugin', glob: '**/plugins/*' }], { ignore: ['archive'] });
+  assert.equal(r.points[0].count, 1);
+  assert.deepEqual(r.points[0].installed, ['two']);
+});

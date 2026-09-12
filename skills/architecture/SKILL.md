@@ -14,7 +14,7 @@ Run the three stages in order. Stage 1 is a program; stage 2 is one bounded revi
 
 ### Stage 0 — kickoff
 1. `node scripts/arch/arch.mjs classify .` → archetypes and evidence. If `ambiguous`, keep going with the first kind and queue interview question `kind-ambiguous`.
-2. If `<docsDir>/architecture/fold-rules.json` is missing, copy `assets/fold-rules.json` there and adjust `rules`, `registries`, `kinds`, `titles`, `system` to the repo layout. Do not guess: read the manifests and the top-level tree.
+2. If `<docsDir>/architecture/fold-rules.json` is missing, copy `assets/fold-rules.json` there and adjust `rules`, `registries`, `kinds`, `titles`, `system` and `scanIgnore` (top-level directories that are not this project's code: archives, vendored checkouts, generated trees) to the repo layout. Do not guess: read the manifests and the top-level tree.
 
 ### Stage 1 — kit run (deterministic, no model calls)
 Run `node scripts/arch/arch.mjs run <root> [--out <docsDir>]`. The source tree is read-only; everything is written under `<docsDir>` (default `<root>/docs`). Use `--out` to document a repo without touching it (a scratch dir, or another checkout).
@@ -22,7 +22,7 @@ Outputs, each JSON with a derived markdown twin under `reference/` (first line `
 - `components` — folded import graph (tests excluded), edge counts, cycles · `drift` — hand model vs code (runtime-tagged edges skipped) · `deps` — ledger with whys inferred from import sites · `delivery` — workflow jobs, steps, gates · `extension-points` · `api` · `tests-by-seam` · `env` · `ui` · `fitness` — rule results · `completeness` — register criteria.
 - `views/*.png` — LikeC4 renders with the legend (`assets/legend.c4`), light theme, minor edges filtered; the model text lives in `architecture/model/` (`spec.c4` = legend, `generated.c4` regenerated every run, `hand.c4` seeded once and never overwritten).
 - `architecture/CHECKLIST.md` — required views for the kinds found, filled from what exists (missing required views read `MISSING`).
-- `architecture/_run/gaps.json`, `interview.md` (human-class gaps not yet answered in `answers.json`), `kit-issues.md`, `project-changes.md`, `index.md` (the human-facing bundle).
+- `architecture/_run/gaps.json`, `questions.md` (kit-generated questions for human-class gaps not yet answered in `answers.json`), `kit-issues.md`, `project-changes.md`, `index.md` (the human-facing bundle; links `interview.md` once stage 2 has written it, else `questions.md`).
 Run it twice if in doubt: the outputs are byte-identical for the same input.
 
 ### Stage 2 — agent review (bounded)
@@ -31,7 +31,7 @@ Read only agent-facing forms: `components.json`, `drift.json`, `fitness.json`, `
 2. Draft or update the written docs the CHECKLIST for this kind requires (see house-style §3): overview, scenarios, journeys, loop, signals, secrets, risks, stakeholders, glossary, deps whys. Every non-code claim cites a file or ADR, or carries `GAP:`.
 3. Classify every gap: `kit` (the tooling should have known — record it in `_run/kit-issues.md`, do not patch the project), `project` (the repo must change — list it in `review.md`, do not do it), `human` (write an interview question).
 4. Check the registers against [references/completeness.json](references/completeness.json) and state unmet criteria as GAP lines in each file's header.
-5. Write `_run/review.md` (what changed, confidence per file, project changes called out) and `_run/interview.md` using the question shape in [references/interview.md](references/interview.md).
+5. Write `_run/review.md` (what changed, confidence per file, project changes called out) and `_run/interview.md`: curate `_run/questions.md` (merge near-duplicates, drop anything answered, add questions the kit could not know) using the shape in [references/interview.md](references/interview.md). Stage 1 never overwrites `interview.md` or `review.md`.
 6. Exit checks: no edits under `docs/reference/`; every written file under 400 lines; net lines reported; every gap classified.
 
 ### Stage 3 — present

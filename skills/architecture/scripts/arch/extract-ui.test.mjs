@@ -52,3 +52,9 @@ test('empty project yields empty routes and attributes without throwing', () => 
   const r = extractUi(root);
   assert.deepEqual(r, { routes: [], dataAttributes: { count: 0, names: [] } });
 });
+
+test('opts.ignore excludes a directory from the route/attribute scan', () => {
+  const root = project({ 'vendor/src/App.tsx': '<Route path="/settings" element={<Settings/>} />\n' });
+  const r = extractUi(root, { ignore: ['vendor'] });
+  assert.deepEqual(r, { routes: [], dataAttributes: { count: 0, names: [] } });
+});

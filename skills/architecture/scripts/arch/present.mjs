@@ -4,9 +4,12 @@
 const VIEWS_REL = '../../reference/views/';
 const isMd = p => /\.md$/i.test(p);
 
+const CAPTIONS = { index: 'System context — who and what surrounds the system', containers: 'Containers — the main runtime parts and how they talk', components: 'Components — production imports between parts (minor edges omitted)', deployment: 'Deployment — where the parts run' };
 function captionFor(pngName) {
   const base = pngName.replace(/\.png$/i, '');
-  return base.split(/[-_]+/).filter(Boolean).map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+  if (CAPTIONS[base]) return CAPTIONS[base];
+  const words = base.split(/[-_]+/).filter(Boolean).map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+  return `Scenario — ${words}`;
 }
 
 function bulletList(paths) {

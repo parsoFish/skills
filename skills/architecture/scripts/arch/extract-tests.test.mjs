@@ -50,3 +50,10 @@ test('no test files gives total 0 without throwing', () => {
   const r = extractTests(root);
   assert.deepEqual(r, { total: 0, byDir: [], tagged: { seams: [], count: 0 }, taggingAdopted: false });
 });
+
+test('opts.ignore excludes a directory from the test-file scan', () => {
+  const root = project({ 'archive/tests/old.test.ts': '', 'packages/flows/tests/a.test.ts': '' });
+  const r = extractTests(root, { ignore: ['archive'] });
+  assert.equal(r.total, 1);
+  assert.deepEqual(r.byDir, [{ dir: 'packages/flows', count: 1 }]);
+});

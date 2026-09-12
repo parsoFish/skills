@@ -1,28 +1,15 @@
 // Extract direct runtime dependencies across npm workspaces, go.mod, and terraform providers,
 // with production import-site evidence. Deterministic, read-only, no lib beyond node:fs.
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative, dirname, sep } from 'node:path';
+import { join, dirname, sep } from 'node:path';
+import { walkFiles, isTestPath } from './walk.mjs';
 
-const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next']);
 const CODE_EXT = /\.(ts|tsx|js|mjs)$/;
-const TEST_PATH = /(^|\/)(tests?|__tests__)(\/|$)|\.test\./;
+const IMPORT_SITE_LIMIT = 8;
 const LOCKFILES = ['package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'go.sum'];
 
 function toPosix(p) { return p.split(sep).join('/'); }
 function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-
-function walk(dir, out, cap) {
-  if (out.length >= cap) return out;
-  let entries;
-  try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return out; }
-  for (const e of entries) {
-    if (out.length >= cap) break;
-    if (SKIP_DIRS.has(e.name)) continue;
-    const p = join(dir, e.name);
-    if (e.isDirectory()) walk(p, out, cap); else out.push(p);
-  }
-  return out;
-}
 
 // Tiny glob for workspaces entries: only "*" as a whole path segment is supported.
 function resolveWorkspaceDirs(root, patterns) {
@@ -73,22 +60,27 @@ function parseTfProviders(text) {
   return deps;
 }
 
+// files: relative posix paths from walkFiles.
 function findImportSites(root, files, name) {
   const re = new RegExp(`from\\s+['"]${escapeRe(name)}(?:/[^'"]*)?['"]|require\\(\\s*['"]${escapeRe(name)}(?:/[^'"]*)?['"]\\s*\\)`);
   const sites = [];
-  for (const f of files) {
-    if (sites.length >= 5) break;
-    if (!CODE_EXT.test(f)) continue;
-    const rel = toPosix(relative(root, f));
-    if (TEST_PATH.test(rel)) continue;
-    let text; try { text = readFileSync(f, 'utf8'); } catch { continue; }
+  for (const rel of files) {
+    if (sites.length >= IMPORT_SITE_LIMIT) break;
+    if (!CODE_EXT.test(rel) || isTestPath(rel)) continue;
+    let text; try { text = readFileSync(join(root, rel), 'utf8'); } catch { continue; }
     if (re.test(text)) sites.push(rel);
   }
   return sites.sort();
 }
 
+function whyFrom(importSites) {
+  if (!importSites.length) return null;
+  return importSites.length > 1 ? `imported by ${importSites[0]} (+${importSites.length - 1} more)` : `imported by ${importSites[0]}`;
+}
+
 /** Direct runtime deps from root+workspace package.json, go.mod, *.tf required_providers. */
-export function extractDeps(root) {
+export function extractDeps(root, opts = {}) {
+  const { ignore = [] } = opts;
   const notes = [];
   const declarers = []; // { name, deps: {name: version} }
   const rootPkgPath = join(root, 'package.json');
@@ -99,7 +91,7 @@ export function extractDeps(root) {
     const patterns = Array.isArray(wsField) ? wsField : Array.isArray(wsField?.packages) ? wsField.packages : [];
     for (const dir of resolveWorkspaceDirs(root, patterns)) {
       const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
-      declarers.push({ name: pkg.name ?? toPosix(relative(root, dir)), deps: pkg.dependencies ?? {} });
+      declarers.push({ name: pkg.name ?? toPosix(dir.slice(root.length + 1)), deps: pkg.dependencies ?? {} });
     }
   } else notes.push('no root package.json');
 
@@ -110,10 +102,10 @@ export function extractDeps(root) {
     declarers.push({ name: moduleName, deps: Object.fromEntries(parseGoMod(text).map(d => [d.name, d.version])) });
   }
 
-  const allFiles = existsSync(root) ? walk(root, [], 20000) : [];
+  const allFiles = walkFiles(root, { ignore });
   for (const f of allFiles.filter(p => p.endsWith('.tf'))) {
-    const providers = parseTfProviders(readFileSync(f, 'utf8'));
-    if (providers.length) declarers.push({ name: toPosix(relative(root, dirname(f))) || '.', deps: Object.fromEntries(providers.map(d => [d.name, d.version])) });
+    const providers = parseTfProviders(readFileSync(join(root, f), 'utf8'));
+    if (providers.length) declarers.push({ name: dirname(f), deps: Object.fromEntries(providers.map(d => [d.name, d.version])) });
   }
 
   const depMap = new Map();
@@ -124,7 +116,7 @@ export function extractDeps(root) {
 
   const deps = [...depMap.entries()].map(([name, info]) => {
     const importSites = findImportSites(root, allFiles, name);
-    return { name, version: info.version, usedBy: [...info.usedBy].sort(), importSites, why: importSites.length ? `imported by ${importSites[0]}` : null, unused: importSites.length === 0 };
+    return { name, version: info.version, usedBy: [...info.usedBy].sort(), importSites, why: whyFrom(importSites), unused: importSites.length === 0 };
   }).sort((a, b) => a.name.localeCompare(b.name));
 
   const lockfile = LOCKFILES.find(f => existsSync(join(root, f))) ?? null;

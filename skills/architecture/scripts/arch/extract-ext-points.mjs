@@ -1,9 +1,6 @@
 // Extract extension points (registries) via a tiny glob engine over the repo tree.
 // "*" matches within one path segment, "**" matches zero or more segments. No lib.
-import { readdirSync, statSync, existsSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
-
-const SKIP_DIRS = new Set(['node_modules', '.git']);
+import { walkFiles } from './walk.mjs';
 
 const DEFAULT_REGISTRIES = [
   { name: 'skill', glob: 'skills/*/SKILL.md' },
@@ -14,24 +11,18 @@ const DEFAULT_REGISTRIES = [
 ];
 
 function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-function toPosix(p) { return p.split(sep).join('/'); }
 
-function collectPaths(root, cap) {
-  const out = [];
-  function walk(dir) {
-    if (out.length >= cap || !existsSync(dir)) return;
-    let entries;
-    try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
-    for (const e of entries) {
-      if (out.length >= cap) return;
-      if (SKIP_DIRS.has(e.name)) continue;
-      const p = join(dir, e.name);
-      out.push(p);
-      if (e.isDirectory()) walk(p);
-    }
+// Glob patterns (e.g. "plugins/*") can name a directory itself, not just a file inside it, so
+// every ancestor directory of each file walkFiles returns is added as its own candidate path.
+function candidatePaths(root, opts) {
+  const files = walkFiles(root, opts);
+  const set = new Set();
+  for (const f of files) {
+    set.add(f);
+    const segs = f.split('/');
+    for (let i = 1; i < segs.length; i++) set.add(segs.slice(0, i).join('/'));
   }
-  walk(root);
-  return out;
+  return [...set];
 }
 
 function segRegex(seg) { return new RegExp('^' + seg.split('*').map(escapeRe).join('[^/]*') + '$'); }
@@ -64,9 +55,9 @@ function installedNameFor(pattern, matchedRelPath) {
 }
 
 /** registries: [{name, glob}] from fold-rules; falls back to the kit's default registry set. */
-export function extractExtPoints(root, registries) {
+export function extractExtPoints(root, registries, opts = {}) {
   const regs = registries?.length ? registries : DEFAULT_REGISTRIES;
-  const allPaths = collectPaths(root, 20000).map(p => toPosix(relative(root, p)));
+  const allPaths = candidatePaths(root, opts);
   const points = regs.map(({ name, glob }) => {
     const matched = allPaths.filter(p => globMatch(glob, p));
     const installed = [...new Set(matched.map(p => installedNameFor(glob, p)))].sort();

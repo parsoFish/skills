@@ -53,3 +53,9 @@ test('empty project yields empty result without throwing', () => {
   const r = extractEnv(root);
   assert.deepEqual(r, { vars: [], secretLike: [] });
 });
+
+test('opts.ignore excludes a directory from the env-var scan', () => {
+  const root = project({ 'vendor/main.go': 'v := os.Getenv("DB_PASSWORD")\n' });
+  const r = extractEnv(root, { ignore: ['vendor'] });
+  assert.deepEqual(r.vars, []);
+});
