@@ -7,7 +7,8 @@ export function walk(dir, out = []) { if (!existsSync(dir)) return out; for (con
 export const DEFAULT_RULES = [
   { id: 'docs.size-cap', concept: 'bloat', description: 'written docs stay under the line cap; reference/ and archive/ are exempt' },
   { id: 'docs.reference-generated', concept: 'generation', description: 'every file under reference/ carries a generated header' },
-  { id: 'docs.no-blank-checklist', concept: 'completeness', description: 'CHECKLIST rows are ✓, partial, or n/a with a reason' },
+  { id: 'docs.no-blank-checklist', concept: 'completeness', description: 'CHECKLIST rows are ✓, partial, MISSING, or n/a with a reason' },
+  { id: 'docs.checklist-complete', concept: 'completeness', description: 'no required view is MISSING' },
   { id: 'naming.retired', concept: 'naming', description: 'retired terms do not appear in docs' },
 ];
 
@@ -22,8 +23,14 @@ export function check(docsRoot, { cap = 400, retired = [] } = {}) {
   results.push({ id: 'docs.reference-generated', ok: noHeader.length === 0, detail: noHeader });
   const cl = files.find(p => p.endsWith('CHECKLIST.md'));
   let blank = [];
-  if (cl) blank = readFileSync(cl, 'utf8').split(/\r?\n/).filter(l => /^\|/.test(l) && !/^\|\s*(view|-)/i.test(l)).filter(l => !/(✓|partial|n\/a:\s*\S)/.test(l));
+  let missing = [];
+  if (cl) {
+    const rows = readFileSync(cl, 'utf8').split(/\r?\n/).filter(l => /^\|/.test(l) && !/^\|\s*(view|-)/i.test(l));
+    blank = rows.filter(l => !/(✓|partial|MISSING|n\/a:\s*\S)/.test(l));
+    missing = rows.filter(l => /\|\s*MISSING\s*\|/.test(l)).map(l => l.split('|')[1].trim());
+  }
   results.push({ id: 'docs.no-blank-checklist', ok: !!cl && blank.length === 0, detail: cl ? blank : ['CHECKLIST.md missing'] });
+  results.push({ id: 'docs.checklist-complete', ok: !!cl && missing.length === 0, detail: cl ? missing : ['CHECKLIST.md missing'] });
   const hits = [];
   if (retired.length) { const re = new RegExp(`\\b(${retired.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`, 'i'); for (const p of files) if (re.test(readFileSync(p, 'utf8'))) hits.push(relative(docsRoot, p)); }
   results.push({ id: 'naming.retired', ok: hits.length === 0, detail: hits });

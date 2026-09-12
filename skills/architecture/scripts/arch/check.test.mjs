@@ -11,6 +11,12 @@ test('clean docs tree passes', () => {
   const r = check(docs({ 'architecture/overview.md': '# o\n', 'architecture/CHECKLIST.md': '| view | status |\n|---|---|\n| context | ✓ |\n| iac | n/a: no terraform |\n', 'reference/deps.md': 'generated 2026-09-12 by arch extract deps\n' }));
   assert.equal(r.ok, true);
 });
+test('MISSING rows are explicit (not blank) but fail checklist-complete', () => {
+  const r = check(docs({ 'architecture/CHECKLIST.md': '| view | status | where |\n|---|---|---|\n| context | ✓ |  |\n| risks | MISSING |  |\n' }));
+  assert.equal(r.results.find(x => x.id === 'docs.no-blank-checklist').ok, true);
+  const c = r.results.find(x => x.id === 'docs.checklist-complete');
+  assert.equal(c.ok, false); assert.deepEqual(c.detail, ['risks']);
+});
 test('size cap ignores reference and archive', () => {
   const big = 'x\n'.repeat(500);
   const r = check(docs({ 'architecture/CHECKLIST.md': '| view |\n|---|\n| a | ✓ |\n', 'reference/gen.md': 'generated x\n' + big, 'architecture/archive/old.md': big, 'architecture/overview.md': big }));
