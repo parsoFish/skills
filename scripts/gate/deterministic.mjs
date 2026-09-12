@@ -36,12 +36,9 @@ export function runDeterministicChecks({ root, scope, sh }) {
 
   const qv = locateQuickValidate();
   for (const s of scope.skills) {
-    if (!qv) {
-      step(`skill-creator quick_validate ${s}`, false, 'skill-creator not installed (claude plugin install skill-creator) — required');
-      continue;
-    }
-    r = sh('python3', [qv, join(root, 'skills', s)]);
-    step(`skill-creator quick_validate ${s}`, r.status === 0, r.out.trim());
+    if (!qv) step(`skill-creator quick_validate ${s}`, false, 'skill-creator not installed (claude plugin install skill-creator) — required');
+    else { r = sh('python3', [qv, join(root, 'skills', s)]); step(`skill-creator quick_validate ${s}`, r.status === 0, r.out.trim()); }
+    // Eval coverage does not depend on skill-creator being installed; it is checked either way.
     const cov = evalCoverage(root, s);
     step(`eval case with Skill grader ${s}`, cov.ok, cov.detail);
   }

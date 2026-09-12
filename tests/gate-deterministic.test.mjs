@@ -55,6 +55,7 @@ test('runDeterministicChecks fails the quick_validate step (without crashing) wh
     const qv = steps.find(s => s.name.startsWith('skill-creator quick_validate'));
     assert.equal(qv.ok, false);
     assert.match(qv.detail, /not installed/);
+    assert.ok(steps.some(s => s.name.startsWith('eval case with Skill grader architecture')), 'eval coverage is still checked without skill-creator');
   } finally {
     process.env.HOME = originalHome;
   }
