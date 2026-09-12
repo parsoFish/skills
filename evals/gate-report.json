@@ -29,9 +29,9 @@
    "detail": ""
   },
   {
-   "name": "claude plugin eval (architecture)",
+   "name": "claude plugin eval (3 cases)",
    "ok": true,
-   "detail": "exit 0 · score 1 · drift-catches-a-new-edge 1 Δ0.5"
+   "detail": "document-a-terraform-repo 1 Δ1 · document-a-ts-monorepo 1 Δ1 · drift-catches-a-new-edge 1 Δ0.5"
   },
   {
    "name": "structural review architecture",
@@ -48,9 +48,22 @@
   "threshold": 0.8,
   "cases": [
    {
+    "name": "document-a-terraform-repo",
+    "score": 1,
+    "delta": 1,
+    "exit": 0
+   },
+   {
+    "name": "document-a-ts-monorepo",
+    "score": 1,
+    "delta": 1,
+    "exit": 0
+   },
+   {
     "name": "drift-catches-a-new-edge",
     "score": 1,
-    "delta": 0.5
+    "delta": 0.5,
+    "exit": 0
    }
   ]
  },
