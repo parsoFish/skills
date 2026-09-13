@@ -15,6 +15,7 @@ Node 22, no runtime dependencies, MIT. `AGENTS.md` points here; there is no seco
     tests/                                         repo plumbing tests
     docs/gate-runbook.md                           what to do when the gate fails
     .github/ISSUE_TEMPLATE/                        the work queue's issue forms
+    tools.json                                     exact pins: likec4, dependency-cruiser, claude-code (bump by hand, never ranges)
 
 ## The loop — every change, no exceptions
 
@@ -44,9 +45,10 @@ Node 22, no runtime dependencies, MIT. `AGENTS.md` points here; there is no seco
     headless structural review         JSON-schema verdict, read-only tools
 
 A case passes only when `score >= threshold` AND `delta >= minDelta` AND `partial` is false AND no
-arm errored. Thresholds live in `gate.config.json`; nothing is hardcoded. A pass writes an
-attestation: `skillsDigest` + `harnessDigest` over git blob SHAs, the commit, the cost, and the
-per-case evidence under `evals/attest/`. CI's `attested` job recomputes both digests and re-checks
+arm errored. Thresholds live in `gate.config.json`; nothing is hardcoded. The current values
+(0.8 / 0.25 / $5 per case) were accepted on 2026-09-13 with five cases; revisit when the case count
+grows. A pass writes an attestation: `skillsDigest` + `harnessDigest` over git blob SHAs, the
+commit, the cost, and the per-case evidence under `evals/attest/`. CI's `attested` job recomputes both digests and re-checks
 every case — a skill edited after the gate ran, or a case the gate never covered, fails the PR.
 Check an already-attested tree without re-running anything: `npm run attest`; this is also what the
 `gate:verify` pre-push hook runs (deterministic checks + attestation verify, spends nothing).
@@ -57,6 +59,9 @@ Run the agentic gate detached on this host; Claude Code's low-memory guard kills
 
 `gate:quick` and `SKILLS_GATE_SKIP_AGENTIC` never produce an attestation, so they can be pushed and
 can never be merged. A bypass needs `SKILLS_GATE_BYPASS_REASON` and is recorded forever.
+CI's `agentic-gate-optional` job is dormant by choice (2026-09-13): the repo holds no `ANTHROPIC_API_KEY`.
+Local attestation plus CI's digest re-check is the trust model. To run the truth-check once, set the
+secret, dispatch `skills-ci` with `real_evals=true`, then remove the secret.
 `npm run clean` prunes old `evals/results/` runs; the gate calls it after a pass.
 When a step fails, go to [docs/gate-runbook.md](docs/gate-runbook.md) — one section per step name.
 
