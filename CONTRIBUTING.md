@@ -63,9 +63,11 @@ scripts/ · tests/                                repo plumbing (gate, attest, r
   only supported way to change the version: it updates `plugin.json`, the marketplace entry,
   `package.json`, and rolls `CHANGELOG.md`'s `## Unreleased` section into a dated one, all
   together. Never hand-edit a version field.
-- The marketplace entry pins releases as `"source": {"source": "github", "repo": "parsoFish/skills",
-  "ref": "vX.Y.Z"}` — verified against `claude plugin validate --strict`. A `ref` **and** `sha`
-  pair directly on the entry is not a valid field and fails validation; don't reintroduce it.
+- The marketplace entry pins releases as `"source": {"source": "url", "url":
+  "https://github.com/parsoFish/skills.git", "ref": "vX.Y.Z"}` — verified against `claude plugin
+  validate --strict` and fetched over https. The `github` source type also validates but clones over
+  SSH with no https fallback, so `claude plugin update` fails on any machine without a GitHub key. A
+  `ref` **and** `sha` pair directly on the entry is not a valid field and fails validation.
 - `npx skills add` installs straight from the repository's default branch — it does not track a
   release tag, so a single-skill consumer always gets the latest commit on `main`, not the latest
   numbered release.
