@@ -1,5 +1,7 @@
 # Architecture house style (condensed)
 
+This file is the specification of record for every document the kit produces; no other copy of the house style is authoritative.
+
 Generic to any software project by aligning with established architecture practice (ISO 42010 viewpoints, 4+1, SEI Views & Beyond, arc42, Well-Architected pillars, evolutionary architecture, Diátaxis, ADRs). 12-factor is not claimed as a whole; the config, dependency and delivery views cover its testable parts. Kinds are archetypes; named repositories are only evidence.
 
 ## Principles
