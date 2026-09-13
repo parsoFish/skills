@@ -3,6 +3,7 @@
 All notable changes to this repo. Conventional commits drive entries; one line per skill change.
 
 ## Unreleased
+- docs: record the 2026-09-13 policy decisions in CLAUDE.md (dormant optional CI job, accepted gate thresholds, exact tool pins).
 
 ## 0.2.0 — 2026-09-12
 - fix(gate): detect harness-only and no-upstream changes instead of silently no-oping, and stop treating a skipped agentic phase as a pass.
