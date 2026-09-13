@@ -126,3 +126,13 @@ test('reuseCandidates lists the raw per-case JSON first and the tracked evidence
   writeFileSync(join(root, 'evals', 'gate-eval-c.json'), '{}');
   assert.deepEqual(reuseCandidates(root, 'c'), [join(root, 'evals', 'gate-eval-c.json'), join(root, 'evals', 'attest', 'c.json')]);
 });
+
+test('attestedForSameContent: a prior attested report with the same skillsDigest covers a case that has evidence, nothing else', async () => {
+  const { attestedForSameContent } = await import('../scripts/gate/agentic.mjs');
+  const prior = { schema: 2, attested: true, skillsDigest: 'abc', eval: { cases: [{ name: 'c1', evidence: 'evals/attest/c1.json' }, { name: 'c2' }] } };
+  assert.equal(attestedForSameContent(prior, 'abc', 'c1'), true);
+  assert.equal(attestedForSameContent(prior, 'abc', 'c2'), false, 'no evidence path');
+  assert.equal(attestedForSameContent(prior, 'zzz', 'c1'), false, 'digest differs');
+  assert.equal(attestedForSameContent({ ...prior, attested: false }, 'abc', 'c1'), false);
+  assert.equal(attestedForSameContent(null, 'abc', 'c1'), false);
+});

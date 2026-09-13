@@ -55,7 +55,8 @@ export function updateMarketplaceManifest(manifest, version, { pluginName, repo 
   const plugins = (manifest.plugins ?? []).map(p => {
     if (p.name !== pluginName) return p;
     found = true;
-    return { ...p, version, source: { source: 'github', repo, ref: `v${version}` } };
+    // `url` + https: the `github` source type clones over SSH and fails on a machine without a GitHub key.
+    return { ...p, version, source: { source: 'url', url: `https://github.com/${repo}.git`, ref: `v${version}` } };
   });
   if (!found) throw new Error(`release: no marketplace entry named "${pluginName}"`);
   return { ...manifest, plugins };

@@ -35,7 +35,13 @@ export function reuseCandidates(root, caseName) {
   return [join(root, 'evals', `gate-eval-${caseName}.json`), join(root, 'evals', 'attest', `${caseName}.json`)].filter(existsSync);
 }
 
-function runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEvals }) {
+/** Pure: the prior attested report covers this case for the exact skill content now in the tree. */
+export function attestedForSameContent(prior, skillsDigestNow, caseName) {
+  if (!prior || prior.schema !== 2 || prior.attested !== true || prior.skillsDigest !== skillsDigestNow) return false;
+  return (prior.eval?.cases ?? []).some(k => k.name === caseName && k.evidence);
+}
+
+function runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEvals, priorReport, skillsDigestNow }) {
   const jsonPath = join(root, 'evals', `gate-eval-${c.name}.json`);
   const reportHtml = join(root, 'evals', 'results', `${c.name}.html`);
   // Crash recovery (--reuse-evals): a result produced after the last commit that touched this
@@ -45,7 +51,9 @@ function runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEval
     for (const candidate of reuseCandidates(root, c.name)) {
       try {
         const j = JSON.parse(readFileSync(candidate, 'utf8'));
-        if (!canReuseEval(j, lastChangeEpoch(root, c.skill))) continue;
+        // Either the result post-dates the last change to the skill, or the prior attestation covers
+        // this case for byte-identical skill content (a squash merge moves commit times, not content).
+        if (!canReuseEval(j, lastChangeEpoch(root, c.skill)) && !attestedForSameContent(priorReport, skillsDigestNow, c.name)) continue;
         const ev = readEvalResult(j, config);
         if (harnessProblem(j) || ev.partial) continue; // an interrupted run is not evidence; try the next candidate
         return { result: { ...c, exit: 0, model: evalModel, judge: judgeModel, jsonPath: candidate, reused: true, ...ev }, harness: '' };
@@ -93,7 +101,7 @@ export async function runAgentic({ root, scope, config, args, det, sh, commit, c
   const perCase = [];
   let harnessMsg = '';
   for (const c of cases) {
-    const { result, harness } = runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEvals: args.reuseEvals === true });
+    const { result, harness } = runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEvals: args.reuseEvals === true, priorReport: prior, skillsDigestNow });
     perCase.push(result);
     harnessMsg = harnessMsg || harness;
   }

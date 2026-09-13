@@ -49,7 +49,7 @@ test('updateMarketplaceManifest rewrites version and source to the {source,repo,
   const after = updateMarketplaceManifest(before, '0.2.0', { pluginName: 'parso-skills', repo: 'parsoFish/skills' });
   assert.deepEqual(after.plugins[0], {
     name: 'parso-skills', description: 'd', version: '0.2.0',
-    source: { source: 'github', repo: 'parsoFish/skills', ref: 'v0.2.0' },
+    source: { source: 'url', url: 'https://github.com/parsoFish/skills.git', ref: 'v0.2.0' },
   });
 });
 
@@ -127,7 +127,7 @@ test('bumpAll wires the transforms together against temp copies of the real mani
 
   assert.equal(plugin.version, '0.2.0');
   assert.equal(marketplace.plugins[0].version, '0.2.0');
-  assert.deepEqual(marketplace.plugins[0].source, { source: 'github', repo: 'parsoFish/skills', ref: 'v0.2.0' });
+  assert.deepEqual(marketplace.plugins[0].source, { source: 'url', url: 'https://github.com/parsoFish/skills.git', ref: 'v0.2.0' });
   assert.equal(pkg.version, '0.2.0');
   assert.equal(pkg.private, true, 'unrelated package.json keys survive the bump untouched');
   assert.match(changelog, /## 0\.2\.0 — 2026-09-13\n- feat: a\n- fix: b/);
