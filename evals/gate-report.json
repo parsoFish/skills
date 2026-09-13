@@ -4,8 +4,8 @@
  "attested": true,
  "agenticRan": true,
  "bypass": null,
- "generatedAt": "2026-09-12T18:18:58.672Z",
- "commit": "ecde8606b115bf1fba1c99dab9cf8f26254c993f",
+ "generatedAt": "2026-09-12T18:36:56.620Z",
+ "commit": "8a56568778a462b022e62dcb6939d3766fde917f",
  "claudeVersion": "2.1.269",
  "pluginVersion": "0.2.0",
  "scope": {
@@ -157,44 +157,26 @@
  "review": {
   "architecture": {
    "verdict": "pass",
-   "findings": [
-    {
-     "severity": "minor",
-     "finding": "SKILL.md frontmatter 'description' is one very long, densely packed sentence-pair (~600 chars). It does satisfy the requirements (third-person, names trigger phrases like 'C4 or context diagrams', 'ADR index', 'risk register', 'dependency ledger', quoted user phrasing, and an explicit 'Use when...' clause), but it could be tightened for scanability without losing content."
-    },
-    {
-     "severity": "minor",
-     "finding": "Could not execute `node --test scripts/arch/*.test.mjs` in this sandboxed review session (command required approval that was out of scope for a read-only review), so test presence was verified structurally (every non-test .mjs in scripts/arch/ has a matching *.test.mjs) but not confirmed to pass at review time."
-    }
-   ],
-   "costUsd": 0.22063499999999997
+   "findings": [],
+   "costUsd": 0.3532144
   },
   "eval-authoring": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.11554160000000001
+   "costUsd": 0.10955219999999999
   },
   "skill-dev": {
    "verdict": "pass",
-   "findings": [
-    {
-     "severity": "minor",
-     "finding": "Step 5 hard-references the sibling 'eval-authoring' skill by name ('use the eval-authoring skill for this step'). This works within the parso-skills plugin but weakens portability if skill-dev is extracted standalone (e.g. via `npx skills add --skill skill-dev` into a stranger's repo) — the referenced skill won't exist there and the instruction has no fallback."
-    },
-    {
-     "severity": "minor",
-     "finding": "No references/, scripts/, or assets/ subdirectories exist. This is acceptable since skill-dev is a process/workflow skill with no deterministic tooling of its own, but it means the file has no progressive-disclosure split to verify — everything (112 lines) lives in SKILL.md itself, which is fine under the 500-line cap but worth noting since the review asked to check references/ and scripts/ specifically."
-    }
-   ],
-   "costUsd": 0.1004004
+   "findings": [],
+   "costUsd": 0.09385079999999998
   }
  },
  "totals": {
-  "costUsd": 6.204004399999999,
+  "costUsd": 6.324044799999999,
   "durationSeconds": 2012
  },
  "skillsDigest": "d701aa223cf93ae9602f03d9dc521361f5c46ec8bdb680f753a43d915057892f",
- "harnessDigest": "27c741b9617f3639a5a4a6daf22a8633a2794af4e9bbb704317b61687a313f05",
+ "harnessDigest": "eb8d1dd4b1b612cf6b557ab7ca427c3b7fba4a9a2a146d56bb8ac43adca2ad6a",
  "reusedEvals": [
   "document-a-terraform-repo",
   "document-a-ts-monorepo",
