@@ -5,11 +5,11 @@
 // (deterministic, --no-agentic, --verify-only) still run before those land.
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { caseNames, readEvalResult, aggregateEvals, harnessProblem, sandboxEnv, canReuseEval } from './eval.mjs';
+import { caseNames, readEvalResult, aggregateEvals, harnessProblem, sandboxEnv, canReuseEval, versionDrift } from './eval.mjs';
 import { spawnSync } from 'node:child_process';
 import { runStructuralReview } from './review.mjs';
 import { appendLedgerLine } from './ledger.mjs';
-import { baseReport, evalSection, writeReportFile, printPass, printFail } from './verdict.mjs';
+import { baseReport, evalSection, writeReportFile, printPass, printFail, claudeVersionFromOutput } from './verdict.mjs';
 import { clean } from '../clean.mjs';
 
 async function importAttest() {
@@ -105,6 +105,8 @@ export async function runAgentic({ root, scope, config, args, det, sh, commit, c
     perCase.push(result);
     harnessMsg = harnessMsg || harness;
   }
+  // A binary swapped by the auto-updater mid-run makes the cases incomparable even when none died.
+  harnessMsg = harnessMsg || versionDrift(claudeVersion, claudeVersionFromOutput(sh('claude', ['--version']).out ?? ''));
   const agg = aggregateEvals(perCase);
   const evalOk = !harnessMsg && agg.ok;
   const reusedEvals = perCase.filter(c => c.reused).map(c => c.name);

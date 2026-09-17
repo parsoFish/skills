@@ -54,3 +54,10 @@ test('runStructuralReview reports ok only on exit 0 with verdict pass, and alway
   assert.equal(crashed.ok, false);
   assert.match(crashed.detail, /no structured verdict/);
 });
+
+test('runStructuralReview spawns claude with the auto-updater disabled', () => {
+  let seen = null;
+  const run = (_cmd, _argv, opts) => { seen = opts; return { status: 0, stdout: JSON.stringify({ structured_output: { verdict: 'pass', findings: [] }, total_cost_usd: 0.1 }) }; };
+  runStructuralReview('/root', 'architecture', { reviewModel: 'm', reviewBudgetUsd: 1 }, run);
+  assert.equal(seen.env?.DISABLE_AUTOUPDATER, '1');
+});
