@@ -4,7 +4,7 @@
 // concern is what makes "every reason reachable by a fixture" a tractable test matrix.
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { isAncestor, commitExists, showFileAtRef, diffFile } from './git.mjs';
+import { isAncestor, commitReachable, showFileAtRef, diffFile } from './git.mjs';
 import { skillsDigest, harnessDigest } from './digest.mjs';
 
 /** attested / agenticRan / bypass — mutually informative but each independently reachable: a bypass
@@ -24,12 +24,14 @@ export function checkDigests(root, report) {
   return reasons;
 }
 
-/** A commit this clone does not have (the branch was squash-merged and deleted) cannot be judged, so
- * the digests carry the proof alone; a commit that IS here must be in HEAD's history. */
+/** A commit no ref in this clone reaches (the branch was squash-merged and deleted; the object may
+ * linger in the reflog) cannot be judged, so the digests carry the proof alone; a commit some ref
+ * still reaches must be in HEAD's history. */
 export function checkAncestor(root, report, head = 'HEAD') {
   if (!report.commit) return ['commit not an ancestor of HEAD'];
-  if (!commitExists(root, report.commit)) return [];
-  return isAncestor(root, report.commit, head) ? [] : ['commit not an ancestor of HEAD'];
+  if (isAncestor(root, report.commit, head)) return [];
+  if (!commitReachable(root, report.commit)) return [];
+  return ['commit not an ancestor of HEAD'];
 }
 
 /** Case dirs actually on disk under evals/<skill>/ — the ground truth coverage is measured against,

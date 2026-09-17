@@ -283,15 +283,25 @@ test('reason: harnessDigest mismatch', () => {
   assert.deepEqual(verifyGolden(g), { ok: false, reasons: ['harnessDigest mismatch'] });
 });
 
-test('reason: commit not an ancestor of HEAD — a commit this clone has that is off HEAD\'s history', () => {
+test('reason: commit not an ancestor of HEAD — a commit on a live branch that is off HEAD\'s history', () => {
   const g = buildGolden();
-  // A child of HEAD made with plumbing: it exists in this clone, is not in HEAD's history, and the
-  // worktree (with its untracked evidence) is untouched.
+  // A child of HEAD made with plumbing and pinned by a branch ref: it is reachable in this clone, is
+  // not in HEAD's history, and the worktree (with its untracked evidence) is untouched.
   const tree = git(g.root, ['write-tree']);
   const side = git(g.root, ['commit-tree', tree, '-p', 'HEAD', '-m', 'side commit']);
+  git(g.root, ['update-ref', 'refs/heads/side', side]);
   const r = cloneReport(g.report); r.commit = side;
   writeReportFile(g.root, r);
   assert.deepEqual(verifyGolden(g), { ok: false, reasons: ['commit not an ancestor of HEAD'] });
+});
+
+test('a dangling commit object (a squash-merged branch whose ref is gone but whose object survives in reflog) is not judged; the digests carry the proof', () => {
+  const g = buildGolden();
+  const tree = git(g.root, ['write-tree']);
+  const side = git(g.root, ['commit-tree', tree, '-p', 'HEAD', '-m', 'squashed-away branch tip']);
+  const r = cloneReport(g.report); r.commit = side;
+  writeReportFile(g.root, r);
+  assert.deepEqual(verifyGolden(g), { ok: true, reasons: [] });
 });
 
 test('a commit this clone does not have (squash-merged branch) is not judged; the digests carry the proof', () => {

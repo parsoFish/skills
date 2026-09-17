@@ -3,6 +3,7 @@
 All notable changes to this repo. Conventional commits drive entries; one line per skill change.
 
 ## Unreleased
+- fix(attest): judge the attested commit's ancestry only when a ref still reaches it, so a squash-merged branch's dangling tip no longer fails `npm run attest` on the maintainer's clone (#13).
 - fix(gate): run every claude child with the auto-updater disabled and fail with a named HARNESS reason when the CLI version changes mid-run (#16).
 
 ## 0.2.1 — 2026-09-13

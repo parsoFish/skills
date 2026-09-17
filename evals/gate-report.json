@@ -4,8 +4,8 @@
  "attested": true,
  "agenticRan": true,
  "bypass": null,
- "generatedAt": "2026-09-17T21:25:43.044Z",
- "commit": "a4e229ec12df5f83bdcef0c074185a097ddc4354",
+ "generatedAt": "2026-09-17T21:31:05.068Z",
+ "commit": "0997a567734b4d58eea6c82d0570a9e3e06de45c",
  "claudeVersion": "2.1.274",
  "pluginVersion": "0.2.1",
  "scope": {
@@ -157,39 +157,31 @@
  "review": {
   "architecture": {
    "verdict": "pass",
-   "findings": [
-    {
-     "severity": "minor",
-     "finding": "SKILL.md frontmatter description is a single very long sentence-chain (~100 words); still third-person, names trigger phrases, and says when to use it, but could be tightened for scanability without losing the trigger phrases."
-    },
-    {
-     "severity": "minor",
-     "finding": "references/stage2.md (79 lines) spends its first ~30 lines narrating a specific past measured run ('a ~78-file TypeScript service ... needed 260 turns') as justification for the 120-turn budget. This is not author/project-identifying, but it's historical rationale rather than imperative instruction — arguably belongs compressed into a single 'why' note rather than a full incident narrative, per the 'rationale in references/' pattern used elsewhere in this repo."
-    },
-    {
-     "severity": "minor",
-     "finding": "assets/fold-rules.json ships opinionated defaults (e.g. include regex '^(src|apps|packages|lib)') tailored to a JS/TS monorepo layout; SKILL.md does instruct the agent to adjust it to the repo layout, so this is a seed/example rather than a hardcoded assumption, but worth confirming it's clearly labeled as a starting template (it is, via Stage 0 instructions) rather than a fixed rule."
-    }
-   ],
-   "costUsd": 0.1790626
+   "findings": [],
+   "costUsd": 0.26606019999999997
   },
   "eval-authoring": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.14244099999999998
+   "costUsd": 0.12361119999999999
   },
   "skill-dev": {
    "verdict": "pass",
-   "findings": [],
-   "costUsd": 0.08400780000000002
+   "findings": [
+    {
+     "severity": "minor",
+     "finding": "Skill ships no scripts/ or assets/ directory — expected for a process/workflow skill with no deterministic tooling of its own, but worth confirming that's intentional rather than an omission, since sibling skills in this repo (e.g. eval-authoring) do ship scripts."
+    }
+   ],
+   "costUsd": 0.1255002
   }
  },
  "totals": {
-  "costUsd": 6.8900267999999985,
+  "costUsd": 6.999686999999998,
   "durationSeconds": 2331
  },
  "skillsDigest": "23c2942493bc31f647465b7b8be4c3ddcf6ee48b53e16113575285c82eb8d032",
- "harnessDigest": "bc2002582d452a31e879cef38b37a307eaf3ab33c14406480878f1ccddc4241e",
+ "harnessDigest": "f0898fe6125aca6e11be3372a6ccbfd4c39cd2578c2ac0067986ab72cba61e2f",
  "reusedEvals": [
   "document-a-terraform-repo",
   "document-a-ts-monorepo",

@@ -48,6 +48,16 @@ export function commitExists(root, commit) {
   return run(root, ['cat-file', '-e', `${commit}^{commit}`]).status === 0;
 }
 
+/** True when some ref (branch, tag, remote-tracking) still reaches `commit`. A squash-merged branch's
+ * tip survives as a dangling object in the author's reflog long after its ref is gone; such an object
+ * "exists" but nothing in the repository's history claims it, so it must read as unknown here. */
+export function commitReachable(root, commit) {
+  if (!commit || !commitExists(root, commit)) return false;
+  const r = run(root, ['for-each-ref', '--contains', commit, '--format=%(refname)']);
+  if (r.status !== 0) throw new Error(`git for-each-ref --contains ${commit} failed: ${(r.stderr || r.stdout).trim()}`);
+  return r.stdout.trim().length > 0;
+}
+
 /** True only when `commit` resolves and is an ancestor of `head`; any git error reads as "not an ancestor". */
 export function isAncestor(root, commit, head = 'HEAD') {
   if (!commit) return false;

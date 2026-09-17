@@ -128,8 +128,10 @@ Same as above but for the harness paths (`scripts/gate.mjs`, `lint.config.json`,
 gate.
 
 ### commit not an ancestor of HEAD
-The report's `commit` isn't in this branch's history — usually a rebase or a cherry-pick that left
-the old report behind. Re-run the gate on the current `HEAD`.
+The report's `commit` is reachable from some branch or tag in this clone but isn't in this branch's
+history — usually a rebase or a cherry-pick that left the old report behind. Re-run the gate on the
+current `HEAD`. A commit no ref reaches any more (a squash-merged branch whose tip lingers in the
+reflog) is deliberately not judged; the digests carry the proof.
 
 ### changed skill not covered
 A skill differs from the merge base but doesn't appear in the report's `changed` list. Re-run the
