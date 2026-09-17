@@ -196,3 +196,41 @@ test('the legend plus a generated model plus a seeded hand.c4 validate as LikeC4
   const out = execFileSync('npx', ['--yes', `likec4@${LIKEC4}`, 'validate', dir], { encoding: 'utf8' });
   assert.match(out, /Valid/);
 });
+
+test('specC4 declares the deployment node kinds a hand-written deployment block needs', () => {
+  const spec = specC4();
+  for (const kind of ['environment', 'zone', 'node', 'device']) assert.match(spec, new RegExp(`^\\s*deploymentNode\\s+${kind}\\b`, 'm'), kind);
+});
+
+test('a hand-written deployment block plus a deployment view validate against the legend and the generated model', t => {
+  if (!likec4CachedOffline()) {
+    t.skip(`likec4 is not available offline (npx --no-install likec4@${LIKEC4} failed)`);
+    return;
+  }
+  const dir = mkdtempSync(join(tmpdir(), 'likec4-deploy-'));
+  writeFileSync(join(dir, 'spec.c4'), specC4());
+  writeFileSync(join(dir, 'generated.c4'), generatedC4(components, { systemId: 'acme', systemTitle: 'Acme' }));
+  writeFileSync(join(dir, 'hand.c4'), seedHandC4(components, { systemId: 'acme' }));
+  writeFileSync(join(dir, 'deployment.c4'), `deployment {
+  prod = environment 'Production' {
+    eu = zone 'eu-west-1' {
+      vm = node 'app-vm' {
+        instanceOf acme.webui
+        instanceOf acme.payments
+      }
+      edge = device 'payment terminal' {
+        instanceOf acme.kernel
+      }
+    }
+  }
+}
+views {
+  deployment view deployment {
+    title 'Deployment'
+    include *
+  }
+}
+`);
+  const out = execFileSync('npx', ['--yes', `likec4@${LIKEC4}`, 'validate', dir], { encoding: 'utf8' });
+  assert.match(out, /Valid/);
+});

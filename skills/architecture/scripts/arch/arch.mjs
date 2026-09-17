@@ -11,6 +11,7 @@ import { drift, writeBaselineProposal, shrinkBaseline } from './drift.mjs';
 import { check } from './check.mjs';
 import { extractDeps } from './extract-deps.mjs';
 import { extractDelivery } from './extract-delivery.mjs';
+import { extractJobs } from './extract-jobs.mjs';
 import { extractExtPoints } from './extract-ext-points.mjs';
 import { extractApi } from './extract-api.mjs';
 import { extractTests } from './extract-tests.mjs';
@@ -24,13 +25,13 @@ import { toMarkdown } from './markdown.mjs';
 import { specC4, generatedC4, seedHandC4 } from './model.mjs';
 import { render } from './render.mjs';
 import { evaluate } from './completeness.mjs';
-import { buildGaps, interviewMd, kitIssuesMd, projectChangesMd, loadAnswers, reconcileProjectChanges } from './interview.mjs';
+import { buildGaps, applyAnswers, interviewMd, kitIssuesMd, projectChangesMd, loadAnswers, reconcileProjectChanges } from './interview.mjs';
 import { briefMd } from './brief.mjs';
-import { checklistMd, viewShape, requiredViews } from './checklist.mjs';
+import { checklistMd, viewShape, requiredViews, presentFromViews } from './checklist.mjs';
 import { indexMd } from './present.mjs';
 import { bundleHtml } from './present-html.mjs';
 import { buildAgentMap, agentMapMd } from './agent-map.mjs';
-import { writeSnapshot, readSnapshot, guardReport, isOpen, close as closeGuard } from './guard.mjs';
+import { writeSnapshot, readSnapshot, refreshSnapshot, guardReport, isOpen, close as closeGuard } from './guard.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 // Pinned tool versions live in one place, tools.json at the repo/plugin root (four levels up from
@@ -133,7 +134,7 @@ function legendFromSpec() {
 
 function extractorTable(rules) {
   const o = { ignore: rules.scanIgnore ?? [] };
-  return { components: () => extractComponents(rules), deps: () => extractDeps(root, o), delivery: () => extractDelivery(root, o), 'ext-points': () => extractExtPoints(root, rules.registries, o), api: () => extractApi(root, o), tests: () => extractTests(root, o), env: () => extractEnv(root, o), ui: () => extractUi(root, o) };
+  return { components: () => extractComponents(rules), deps: () => extractDeps(root, o), delivery: () => extractDelivery(root, o), jobs: () => extractJobs(root, o), 'ext-points': () => extractExtPoints(root, rules.registries, o), api: () => extractApi(root, o), tests: () => extractTests(root, o), env: () => extractEnv(root, o), ui: () => extractUi(root, o) };
 }
 
 function run() {
@@ -160,6 +161,7 @@ function run() {
   const ex = extractorTable(rules);
   const deps = ex.deps(); emit('deps', deps, 'extract deps');
   const delivery = ex.delivery(); emit('delivery', delivery, 'extract delivery');
+  const jobs = ex.jobs(); emit('jobs', jobs, 'extract jobs');
   const ext = ex['ext-points'](); emit('extension-points', ext, 'extract ext-points');
   const api = ex.api(); emit('api', api, 'extract api');
   const tests = ex.tests(); emit('tests-by-seam', tests, 'extract tests');
@@ -183,11 +185,12 @@ function run() {
   const completeness = evaluate(docsDir, JSON.parse(readFileSync(join(here, '..', '..', 'references', 'completeness.json'), 'utf8')), { retired: rules.retired ?? [], now: flag('--now'), minScenarios: scenariosRequired ? (kinds.kinds.includes('service') ? 2 : 1) : 0 });
   write(join(P.ref, 'completeness.json'), JSON.stringify(completeness, null, 1));
   const present = Object.fromEntries(['context', 'component', 'deployment', 'scenarios', 'catalogue', 'api', 'module-graph', 'adrs', 'risks', 'screen-flow', 'loop', 'device-topology', 'extension-points', 'signals', 'pipeline', 'credential', 'deps', 'job-dag', 'data-contracts', 'tests', 'stakeholders', 'rules', 'quality'].map(v => [v, presentByShape(v)]));
-  if (views.includes('index.png')) present.context = 'reference/views/index.png';
+  Object.assign(present, presentFromViews(views)); // a rendered index.png is the context view; a rendered deployment.png is the deployment view
   present.component = 'reference/components.md'; present.deps = 'reference/deps.md'; present.rules = 'reference/fitness.md';
   present.tests = tests.taggingAdopted ? 'reference/tests-by-seam.md' : tests.total > 0 ? 'partial' : false;
   present['extension-points'] = (ext.points ?? []).some(x => x.count > 0) ? 'reference/extension-points.md' : false;
   present.pipeline = (delivery.workflows?.length ?? 0) > 0 ? 'reference/delivery.md' : false;
+  present['job-dag'] = (jobs.jobs?.length ?? 0) > 0 ? 'reference/jobs.md' : false;
   present.api = api.source === 'openapi' ? 'reference/api.md' : api.paths?.length ? 'partial' : false;
   if (infra && (infra.modules?.length ?? 0) > 0) present['module-graph'] = 'reference/infra.md';
   write(join(P.arch, 'CHECKLIST.md'), checklistMd(kinds.kinds, present));
@@ -195,9 +198,10 @@ function run() {
   // agent map: the coding agent's first read
   const map = buildAgentMap({ components, drift: d, fitness, rules: rules.rules, kinds: rules.kinds ?? {}, root, ignore: rules.scanIgnore ?? [], include: rules.include });
   write(join(P.ref, 'agent-map.json'), JSON.stringify(map, null, 1)); write(join(P.arch, 'AGENTS-ARCH.md'), stamp(agentMapMd(map)));
-  const gaps = buildGaps({ classify: kinds, components, drift: d, deps, delivery, api, tests, env, completeness });
-  write(join(P.run, 'gaps.json'), JSON.stringify(gaps, null, 1));
   const answers = loadAnswers(join(P.arch, 'answers.json'));
+  // a gap ruled not applicable in answers.json stays in gaps.json as `accepted`, so nothing re-raises it
+  const gaps = applyAnswers(buildGaps({ classify: kinds, components, drift: d, deps, delivery, api, tests, env, completeness }), answers);
+  write(join(P.run, 'gaps.json'), JSON.stringify(gaps, null, 1));
   write(join(P.run, 'questions.md'), interviewMd(gaps, answers)); // kit questions; stage 2 curates them into interview.md
   write(join(P.run, 'kit-issues.md'), kitIssuesMd(gaps));
   // the one file stage 2 has to read before writing anything
@@ -216,6 +220,9 @@ function run() {
   const generatedList = readdirSync(P.ref).filter(f => f.endsWith('.md')).sort().map(f => `../../reference/${f}`).concat(existsSync(join(P.decisions, 'README.md')) ? ['../../decisions/README.md'] : []);
   const interviewPath = existsSync(join(P.run, 'interview.md')) ? 'interview.md' : 'questions.md';
   write(join(P.run, 'index.md'), indexMd({ views, written: writtenList, generated: generatedList, interviewPath, reviewPath: existsSync(join(P.run, 'review.md')) ? 'review.md' : undefined, titles }));
+  // A kit run inside an open stage-2 review (only reachable with --force) is the sanctioned revalidation;
+  // re-hash the files it just rewrote so `guard verify` judges the agent's edits, not the kit's.
+  if (isOpen(docsDir)) { refreshSnapshot(docsDir); notes.push('stage-2 guard snapshot refreshed after this kit run'); }
   const md = rel => ({ path: rel, markdown: readFileSync(join(P.run, rel), 'utf8') });
   const byClass = ['kit', 'project', 'human'].map(c => `${c} ${gaps.filter(g => g.class === c).length}`).join(' · ');
   write(join(P.run, 'run.md'), ['generated by arch run', `source: ${sha ?? 'unknown'}`, '', `kinds: ${kinds.kinds.join(' + ')}${kinds.ambiguous ? ' (ambiguous)' : ''}`, `components: ${components.nodes.length} · edges: ${components.edges.length} · cycles: ${components.cycles.length} · engine: ${components.engine}`, `drift: ${d.unexplained} unexplained (${d.edges.undeclared.length} undeclared, ${d.edges.inHandNotCode.length} claimed-but-absent) · baseline ${baseline.edges.length}`, `views rendered: ${views.length}`, `fitness: ${fitness.ok ? 'all rules pass' : fitness.results.filter(r => !r.ok).length + ' rule(s) failing'} · completeness: ${completeness.verdict}`, `gaps: ${gaps.length} (${byClass})`, '', ...notes.map(n => `- ${n}`)].join('\n'));
@@ -256,7 +263,12 @@ if (isEntry) switch (cmd) {
   case 'guard': {
     if (sub === 'snapshot') { const p = writeSnapshot(docsDir); console.log(`stage-2 snapshot written: ${p}`); break; }
     if (sub === 'verify') { const g = guardReport(docsDir, readSnapshot(docsDir), { fitness: readJson(join(P.ref, 'fitness.json'), undefined) }); write(join(P.run, 'guard.md'), g.text); console.log(g.text.trim()); process.exitCode = g.ok ? 0 : 1; break; }
-    if (sub === 'close') { console.log(`stage 2 closed: ${closeGuard(docsDir)}`); break; }
+    if (sub === 'close') {
+      const c = closeGuard(docsDir, { snap: readSnapshot(docsDir), fitness: readJson(join(P.ref, 'fitness.json'), undefined) });
+      if (c.report) write(join(P.run, 'guard.md'), c.report.text);
+      if (!c.ok) { console.error(c.report.text.trim()); console.error('stage 2 NOT closed: fix the kit-owned files above (re-run `arch run --no-render --force` to regenerate them) and close again'); process.exitCode = 1; break; }
+      console.log(`stage 2 closed: ${c.path}`); break;
+    }
     console.error('usage: arch guard <snapshot|verify|close> [root] --out <docsDir>'); process.exitCode = 2; break;
   }
   default: console.log('usage: arch <classify [--help-fold-rules]|extract <kind>|drift|check|run|guard <snapshot|verify|close>> [root] [--out <docsDir>] [--no-render] [--now YYYY-MM-DD] [--force]'); process.exitCode = 2;

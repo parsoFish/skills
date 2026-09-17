@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { buildGaps, interviewMd, kitIssuesMd, projectChangesMd, loadAnswers, reconcileProjectChanges } from './interview.mjs';
+import { buildGaps, interviewMd, kitIssuesMd, projectChangesMd, loadAnswers, reconcileProjectChanges, applyAnswers } from './interview.mjs';
 
 test('kind-ambiguous classify produces a human gap with one option per kind', () => {
   const gaps = buildGaps({ classify: { kinds: ['cli', 'service'], ambiguous: true, evidence: ['bin + web framework'] } });
@@ -167,4 +167,40 @@ test('loadAnswers returns {} when the file is missing, and parses JSON when pres
   const p = join(dir, 'answers.json');
   writeFileSync(p, JSON.stringify({ 'kind-ambiguous': { answer: 'cli', at: '2026-09-12' } }));
   assert.deepEqual(loadAnswers(p), { 'kind-ambiguous': { answer: 'cli', at: '2026-09-12' } });
+});
+
+test('applyAnswers marks a gap accepted when its answer is n/a in any spelling or notApplicable is set, and leaves other answers alone', () => {
+  const gaps = buildGaps({ classify: { kinds: ['cli', 'service'], ambiguous: true, evidence: ['e'] }, api: { source: 'literals' }, delivery: { requiredChecks: null }, env: { secretLike: ['API_TOKEN'] } });
+  const answers = {
+    'api-source-literals': { answer: 'n/a', at: '2026-09-18', note: 'internal tool, no external callers' },
+    'delivery-required-checks-unknown': { answer: 'Not applicable', at: '2026-09-18' },
+    'env-secret-like-names': { notApplicable: true, at: '2026-09-18' },
+    'kind-ambiguous': { answer: 'cli', at: '2026-09-18' },
+  };
+  const out = applyAnswers(gaps, answers);
+  const byId = Object.fromEntries(out.map(g => [g.id, g]));
+  assert.equal(byId['api-source-literals'].accepted, true);
+  assert.equal(byId['api-source-literals'].acceptedAt, '2026-09-18');
+  assert.equal(byId['api-source-literals'].acceptedNote, 'internal tool, no external callers');
+  assert.equal(byId['delivery-required-checks-unknown'].accepted, true);
+  assert.equal(byId['env-secret-like-names'].accepted, true);
+  assert.equal(byId['kind-ambiguous'].accepted, undefined);
+  assert.equal(gaps.find(g => g.id === 'api-source-literals').accepted, undefined, 'input gaps are not mutated');
+});
+
+test('an accepted project gap is tracked as accepted, never new, open or regressed', () => {
+  const gaps = applyAnswers(buildGaps({ api: { source: 'literals' }, tests: { taggingAdopted: false } }), { 'api-source-literals': { answer: 'n/a', at: '2026-09-18' } });
+  const first = reconcileProjectChanges([], gaps, '2026-09-18');
+  assert.deepEqual(first.map(c => [c.id, c.status]), [['api-source-literals', 'accepted'], ['tests-tagging-not-adopted', 'new']]);
+  const second = reconcileProjectChanges(first, gaps, '2026-09-19');
+  assert.deepEqual(second.map(c => [c.id, c.status]), [['api-source-literals', 'accepted'], ['tests-tagging-not-adopted', 'open']]);
+});
+
+test('project-changes and kit-issues markdown say when a gap is accepted instead of re-raising it', () => {
+  const gaps = applyAnswers(buildGaps({ api: { source: 'literals' }, delivery: { requiredChecks: null } }), {
+    'api-source-literals': { answer: 'n/a', at: '2026-09-18', note: 'no external callers' },
+    'delivery-required-checks-unknown': { answer: 'n/a', at: '2026-09-18' },
+  });
+  assert.match(projectChangesMd(gaps), /accepted: not applicable \(answers\.json, 2026-09-18\) — no external callers/);
+  assert.match(kitIssuesMd(gaps), /accepted: not applicable \(answers\.json, 2026-09-18\)/);
 });

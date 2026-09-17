@@ -84,13 +84,22 @@ const SHAPES = {
   pipeline: { file: 'reference/delivery.md', needsFence: false, needsTableColumns: ['file', 'job', 'needs', 'runs-on', 'steps'] },
   credential: { file: 'architecture/secrets.md', needsFence: true, needsTableColumns: [] },
   deps: { file: 'reference/deps.md', needsFence: false, needsTableColumns: ['name', 'version', 'usedBy', 'why', 'unused'] },
-  'job-dag': { file: 'reference/pipeline.md', needsFence: true, needsTableColumns: [] },
+  'job-dag': { file: 'reference/jobs.md', needsFence: false, needsTableColumns: ['source', 'file', 'job', 'schedule'] },
   'data-contracts': { file: 'reference/data/', needsFence: false, needsTableColumns: [] },
   tests: { file: 'reference/tests-by-seam.md', needsFence: false, needsTableColumns: ['seam', 'unit', 'contract', 'journey', 'ground'] },
   stakeholders: { file: 'architecture/stakeholders.md', needsFence: false, needsTableColumns: ['stakeholder', 'concern', 'view'] },
   rules: { file: 'reference/fitness.md', needsFence: false, needsTableColumns: ['id', 'ok', 'detail'] },
   quality: { file: 'architecture/quality.md', needsFence: false, needsTableColumns: ['goal', 'scenario', 'rule'] },
 };
+
+/** Which views a set of rendered PNGs satisfies, by the kit's fixed view ids: `index` is the context
+ * view, `deployment` the deployment view. Pure; unknown PNGs satisfy nothing. */
+export function presentFromViews(views = []) {
+  const out = {};
+  if (views.includes('index.png')) out.context = 'reference/views/index.png';
+  if (views.includes('deployment.png')) out.deployment = 'reference/views/deployment.png';
+  return out;
+}
 
 /** What counts as "present" for a view: its conventional path plus the shape a caller should check (a mermaid/svg fence, or specific table columns) rather than just an inode existing. Unknown views get an empty, unopinionated shape. */
 export function viewShape(view) {

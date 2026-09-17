@@ -63,6 +63,14 @@ export function writeSnapshot(docsDir) {
   writeFileSync(p, JSON.stringify({ ...snapshot(docsDir), pid: process.pid, at: new Date().toISOString() }, null, 1) + '\n');
   return p;
 }
+/** A kit run during stage 2 legitimately rewrites kit-owned files; re-hash them so verify measures the
+ * agent's edits since the LAST kit run, not since the review opened. The opening stamp is kept. */
+export function refreshSnapshot(docsDir) {
+  const prev = readSnapshot(docsDir);
+  const p = join(docsDir, 'architecture', '_run', '.stage2-guard.json');
+  writeFileSync(p, JSON.stringify({ ...snapshot(docsDir), pid: prev.pid, at: prev.at, refreshedAt: new Date().toISOString() }, null, 1) + '\n');
+  return p;
+}
 export function readSnapshot(docsDir) { const p = join(docsDir, 'architecture', '_run', '.stage2-guard.json'); if (!existsSync(p)) throw new Error('no stage-2 snapshot; run `arch guard snapshot` before the review'); return JSON.parse(readFileSync(p, 'utf8')); }
 
 /** True while a stage-2 review is in progress: the pre-review snapshot exists and stage 2 has not been closed. */
@@ -72,9 +80,13 @@ export function isOpen(docsDir) {
   return existsSync(snapPath) && !existsSync(donePath);
 }
 
-/** Marks stage 2 finished: writes the .stage2-done marker isOpen checks for. */
-export function close(docsDir) {
+/** Marks stage 2 finished: writes the .stage2-done marker isOpen checks for. When `snap` is given the
+ * same check `guard verify` runs is applied first, so close and verify can never disagree: a tampered
+ * tree gets `{ ok: false, path: null, report }` and no marker. */
+export function close(docsDir, { snap, fitness } = {}) {
+  const report = snap ? guardReport(docsDir, snap, { fitness }) : null;
+  if (report && !report.ok) return { ok: false, path: null, report };
   const p = join(docsDir, 'architecture', '_run', '.stage2-done');
   writeFileSync(p, JSON.stringify({ at: new Date().toISOString() }, null, 1) + '\n');
-  return p;
+  return { ok: true, path: p, report };
 }

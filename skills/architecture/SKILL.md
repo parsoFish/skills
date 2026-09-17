@@ -48,7 +48,7 @@ node <skill>/scripts/arch/arch.mjs check .                       # exit 1 on rul
 Accepting a new coupling is an edit to `architecture/model/hand.c4` (declare it) or to `drift-baseline.json` (accept it, shrink-only) in the same PR, with an ADR when it crosses a boundary.
 
 ### Stage 3 — present
-Open `_run/index.md`: rendered views first (never `.c4` or JSON), then written docs, then `interview.md`. Record answers in `docs/architecture/answers.json` as `{"<question id>": {"answer": "...", "at": "YYYY-MM-DD"}}`. A re-run starts at stage 1 and re-asks only questions whose id is not answered.
+Open `_run/index.md`: rendered views first (never `.c4` or JSON), then written docs, then `interview.md`. Record answers in `docs/architecture/answers.json` as `{"<question id>": {"answer": "...", "at": "YYYY-MM-DD"}}`; `"answer": "n/a"` rules a gap out permanently (it stays in `gaps.json` as `accepted` and is never re-raised). A re-run starts at stage 1 and re-asks only questions whose id is not answered.
 
 ## Rules that always hold
 - **Never stop to ask during stages 0–2.** There may be nobody to answer. A tool that cannot run (no network for LikeC4, a missing extractor, a denied permission) becomes a line in `run.md` and a `GAP:` in the affected doc; the run continues to the end and every question goes into `interview.md` for stage 3. Do not request network or elevated access mid-run.

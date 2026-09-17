@@ -93,3 +93,44 @@ test('up to 8 import sites are collected; why names the first and counts the res
   assert.equal(zod.importSites.length, 8);
   assert.equal(zod.why, `imported by ${zod.importSites[0]} (+7 more)`);
 });
+
+test('subpath and scoped-subpath imports fold under their package, and a sibling package name never matches by prefix', () => {
+  const root = project({
+    'package.json': JSON.stringify({ name: 'app', dependencies: { react: '^19', 'react-dom': '^19', '@scope/pkg': '^1' } }),
+    'src/main.tsx': "import { createRoot } from 'react-dom/client'\nimport thing from '@scope/pkg/sub/path'\n",
+    'package-lock.json': '{}',
+  });
+  const r = extractDeps(root);
+  assert.deepEqual(r.deps.find(d => d.name === 'react-dom').importSites, ['src/main.tsx']);
+  assert.deepEqual(r.deps.find(d => d.name === '@scope/pkg').importSites, ['src/main.tsx']);
+  assert.equal(r.deps.find(d => d.name === 'react').unused, true);
+});
+
+test('import sites are found in .jsx, .cjs, .mts and .cts files, not only ts/tsx/js/mjs', () => {
+  const root = project({
+    'package.json': JSON.stringify({ name: 'app', dependencies: { 'react-dom': '^19', zod: '^3', yaml: '^2', ms: '^2' } }),
+    'src/main.jsx': "import { createRoot } from 'react-dom/client'\n",
+    'scripts/build.cjs': "const { z } = require('zod')\n",
+    'src/cfg.mts': "import YAML from 'yaml'\n",
+    'src/time.cts': "import ms from 'ms'\n",
+    'package-lock.json': '{}',
+  });
+  const r = extractDeps(root);
+  for (const [name, site] of [['react-dom', 'src/main.jsx'], ['zod', 'scripts/build.cjs'], ['yaml', 'src/cfg.mts'], ['ms', 'src/time.cts']]) {
+    assert.deepEqual(r.deps.find(d => d.name === name).importSites, [site], name);
+  }
+});
+
+test('side-effect imports and dynamic import() count as import sites', () => {
+  const root = project({
+    'package.json': JSON.stringify({ name: 'app', dependencies: { dotenv: '^16', 'img-comparison-slider': '^8', 'left-pad': '^1' } }),
+    'src/boot.ts': "import 'dotenv/config'\n",
+    'src/lazy.ts': "export async function load() { const m = await import('img-comparison-slider'); return m; }\n",
+    'src/other.ts': "const p = import(\"left-pad\")\n",
+    'package-lock.json': '{}',
+  });
+  const r = extractDeps(root);
+  assert.deepEqual(r.deps.find(d => d.name === 'dotenv').importSites, ['src/boot.ts']);
+  assert.deepEqual(r.deps.find(d => d.name === 'img-comparison-slider').importSites, ['src/lazy.ts']);
+  assert.deepEqual(r.deps.find(d => d.name === 'left-pad').importSites, ['src/other.ts']);
+});

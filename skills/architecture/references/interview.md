@@ -15,5 +15,6 @@ Rules
 - One finding per question. A question that needs two answers is two questions.
 - Options are concrete actions, never "let me know".
 - The default must be safe to apply unattended.
-- Answers are stored in `docs/architecture/answers.json` as `id: {answer, at, note}`; the next run re-asks only when the evidence for that id changed.
+- Answers are stored in `docs/architecture/answers.json` as `id: {answer, at, note}`; an answered id is never asked again.
+- `{"answer": "n/a"}` (or `"not applicable"`, or `{"notApplicable": true}`) rules a gap out for good, for any class: the gap stays in `gaps.json` marked `accepted`, `project-changes.md` and `kit-issues.md` print `accepted: not applicable (answers.json, <date>) — <note>` instead of re-raising it, and its status is `accepted` rather than new/open/regressed.
 - Kit-class gaps never become questions; they are filed in `_run/kit-issues.md` with a repro.

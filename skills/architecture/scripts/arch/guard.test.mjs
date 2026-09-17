@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { snapshot, verify, kitShapedQuestions, guardReport, writeSnapshot, readSnapshot, isOpen, close } from './guard.mjs';
+import { snapshot, verify, kitShapedQuestions, guardReport, writeSnapshot, readSnapshot, isOpen, close, refreshSnapshot } from './guard.mjs';
 
 function docs() {
   const root = mkdtempSync(join(tmpdir(), 'guard-'));
@@ -55,7 +55,8 @@ test('isOpen is true once a stage-2 snapshot exists, false before it and after c
   mkdirSync(join(root, 'architecture', '_run'), { recursive: true });
   writeSnapshot(root);
   assert.equal(isOpen(root), true);
-  const p = close(root);
+  const { ok, path: p } = close(root);
+  assert.equal(ok, true);
   assert.ok(existsSync(p));
   assert.equal(isOpen(root), false);
 });
@@ -88,4 +89,36 @@ test('guardReport surfaces the false-green reason line when fitness is passed th
   const g = guardReport(root, s, { fitness: { ok: false, results: [{ id: 'x', ok: false, detail: [] }] } });
   assert.equal(g.ok, false);
   assert.match(g.text, /reason: review claims green while fitness has failing rules/);
+});
+
+test('refreshSnapshot re-hashes kit-owned files after a kit run, keeps the original opening stamp, and makes verify pass again', () => {
+  const root = docs();
+  mkdirSync(join(root, 'architecture', '_run'), { recursive: true });
+  writeSnapshot(root);
+  const opened = readSnapshot(root);
+  writeFileSync(join(root, 'architecture', 'CHECKLIST.md'), '| view | regenerated |\n'); // what `arch run` does
+  assert.equal(verify(root, opened).ok, false);
+  refreshSnapshot(root);
+  const refreshed = readSnapshot(root);
+  assert.equal(refreshed.at, opened.at);
+  assert.equal(refreshed.pid, opened.pid);
+  assert.ok(refreshed.refreshedAt);
+  assert.equal(verify(root, refreshed).ok, true);
+});
+
+test('close applies the same test as verify: it refuses to write the done marker while kit-owned files are tampered', () => {
+  const root = docs();
+  mkdirSync(join(root, 'architecture', '_run'), { recursive: true });
+  writeSnapshot(root);
+  writeFileSync(join(root, 'reference', 'deps.md'), 'hand-edited\n');
+  const refused = close(root, { snap: readSnapshot(root) });
+  assert.equal(refused.ok, false);
+  assert.equal(refused.path, null);
+  assert.deepEqual(refused.report.verify.modified, ['reference/deps.md']);
+  assert.equal(isOpen(root), true);
+  writeFileSync(join(root, 'reference', 'deps.md'), 'generated\n');
+  const done = close(root, { snap: readSnapshot(root) });
+  assert.equal(done.ok, true);
+  assert.ok(existsSync(done.path));
+  assert.equal(isOpen(root), false);
 });
