@@ -6,6 +6,7 @@ import { tmpdir, homedir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { skillsDigest, harnessDigest, dirtyPaths, copyEvidence, verify } from '../scripts/attest.mjs';
 import { redactSuiteIdentity, redactHomePaths } from '../scripts/attest/evidence.mjs';
+import { skillDigest } from '../scripts/attest/digest.mjs';
 
 function git(root, args) {
   const r = spawnSync('git', args, { cwd: root, encoding: 'utf8' });
@@ -468,4 +469,26 @@ test('diffNameOnly against the empty-tree sentinel lists every tracked file (two
   const g = buildGolden();
   const all = diffNameOnly(g.root, EMPTY_TREE_SHA, 'HEAD');
   assert.ok(all.length > 0 && all.includes('.claude-plugin/plugin.json'), `expected tracked files, got ${all.length}`);
+});
+
+test('skillDigest covers one skill\'s own files and evals only: it moves when they change and stays put when another skill changes', () => {
+  const root = initRepo();
+  writeBaseline(root);
+  write(root, 'skills/alpha/SKILL.md', 'a1');
+  write(root, 'evals/alpha/case1/prompt.md', 'do a');
+  write(root, 'skills/beta/SKILL.md', 'b1');
+  commit(root, 'init');
+  const alpha1 = skillDigest(root, 'alpha');
+  const beta1 = skillDigest(root, 'beta');
+  assert.notEqual(alpha1, beta1);
+
+  write(root, 'skills/beta/SKILL.md', 'b2');
+  write(root, 'evals/attest/case1.json', '{}');
+  commit(root, 'change beta and an excluded output');
+  assert.equal(skillDigest(root, 'alpha'), alpha1, 'alpha unaffected by beta or attestation outputs');
+  assert.notEqual(skillDigest(root, 'beta'), beta1);
+
+  write(root, 'evals/alpha/case1/prompt.md', 'do a differently');
+  commit(root, 'change alpha eval');
+  assert.notEqual(skillDigest(root, 'alpha'), alpha1, 'an eval change moves the skill digest');
 });

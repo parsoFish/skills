@@ -41,7 +41,15 @@ export function attestedForSameContent(prior, skillsDigestNow, caseName) {
   return (prior.eval?.cases ?? []).some(k => k.name === caseName && k.evidence);
 }
 
-function runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEvals, priorReport, skillsDigestNow }) {
+/** Pure: the prior attested report covers this case for the exact content of ITS skill now in the tree,
+ * regardless of what changed in other skills or of squash-merge commit times. */
+export function attestedForSameSkillContent(prior, skill, skillDigestNow, caseName) {
+  if (!prior || prior.schema !== 2 || prior.attested !== true || !skillDigestNow) return false;
+  if (!prior.skillDigests || prior.skillDigests[skill] !== skillDigestNow) return false;
+  return (prior.eval?.cases ?? []).some(k => k.name === caseName && k.skill === skill && k.evidence);
+}
+
+function runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEvals, priorReport, skillsDigestNow, skillDigestsNow = {} }) {
   const jsonPath = join(root, 'evals', `gate-eval-${c.name}.json`);
   const reportHtml = join(root, 'evals', 'results', `${c.name}.html`);
   // Crash recovery (--reuse-evals): a result produced after the last commit that touched this
@@ -53,7 +61,9 @@ function runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEval
         const j = JSON.parse(readFileSync(candidate, 'utf8'));
         // Either the result post-dates the last change to the skill, or the prior attestation covers
         // this case for byte-identical skill content (a squash merge moves commit times, not content).
-        if (!canReuseEval(j, lastChangeEpoch(root, c.skill)) && !attestedForSameContent(priorReport, skillsDigestNow, c.name)) continue;
+        if (!canReuseEval(j, lastChangeEpoch(root, c.skill))
+          && !attestedForSameContent(priorReport, skillsDigestNow, c.name)
+          && !attestedForSameSkillContent(priorReport, c.skill, skillDigestsNow[c.skill], c.name)) continue;
         const ev = readEvalResult(j, config);
         if (harnessProblem(j) || ev.partial) continue; // an interrupted run is not evidence; try the next candidate
         return { result: { ...c, exit: 0, model: evalModel, judge: judgeModel, jsonPath: candidate, reused: true, ...ev }, harness: '' };
@@ -82,6 +92,7 @@ export async function runAgentic({ root, scope, config, args, det, sh, commit, c
   const attest = await importAttest();
   const skillsDigestNow = attest.skillsDigest(root);
   const harnessDigestNow = attest.harnessDigest(root);
+  const skillDigestsNow = Object.fromEntries(scope.skills.map(s => [s, attest.skillDigest(root, s)]));
 
   const priorPath = join(root, 'evals', 'gate-report.json');
   const prior = existsSync(priorPath) ? JSON.parse(readFileSync(priorPath, 'utf8')) : null;
@@ -101,7 +112,7 @@ export async function runAgentic({ root, scope, config, args, det, sh, commit, c
   const perCase = [];
   let harnessMsg = '';
   for (const c of cases) {
-    const { result, harness } = runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEvals: args.reuseEvals === true, priorReport: prior, skillsDigestNow });
+    const { result, harness } = runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEvals: args.reuseEvals === true, priorReport: prior, skillsDigestNow, skillDigestsNow });
     perCase.push(result);
     harnessMsg = harnessMsg || harness;
   }
@@ -129,6 +140,7 @@ export async function runAgentic({ root, scope, config, args, det, sh, commit, c
   const dirty = attest.dirtyPaths(root);
   const skillsDigest = attest.skillsDigest(root);
   const harnessDigest = attest.harnessDigest(root);
+  const skillDigests = Object.fromEntries(scope.skills.map(s => [s, attest.skillDigest(root, s)]));
   const attested = dirty.length === 0;
 
   const totalCostUsd = perCase.reduce((s, c) => s + (c.costUsd ?? 0), 0) + Object.values(review).reduce((s, r) => s + (r.costUsd ?? 0), 0);
@@ -138,7 +150,7 @@ export async function runAgentic({ root, scope, config, args, det, sh, commit, c
     ...baseReport({ scope, steps: det.steps, ok: true, ...meta }), agenticRan: true, attested,
     eval: evalSection(config, perCase), review, reusedEvals,
     totals: { costUsd: totalCostUsd, durationSeconds: totalDurationSeconds },
-    skillsDigest, harnessDigest,
+    skillsDigest, harnessDigest, skillDigests,
   };
   writeReportFile(root, report);
   if (!attested) return printFail(`working tree dirty: ${dirty.join(', ')}`);

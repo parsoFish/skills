@@ -157,3 +157,13 @@ test('versionDrift is silent when the CLI version is unchanged or unknown, and n
   assert.match(msg, /2\.1\.274/);
   assert.match(msg, /--reuse-evals/);
 });
+
+test('attestedForSameSkillContent: a prior report covers a case when that skill\'s own digest is unchanged, whatever happened to other skills', async () => {
+  const { attestedForSameSkillContent } = await import('../scripts/gate/agentic.mjs');
+  const prior = { schema: 2, attested: true, skillsDigest: 'whole-tree-old', skillDigests: { architecture: 'arch1', 'skill-dev': 'sd1' }, eval: { cases: [{ name: 'c1', skill: 'architecture', evidence: 'evals/attest/c1.json' }, { name: 'c2', skill: 'skill-dev' }] } };
+  assert.equal(attestedForSameSkillContent(prior, 'architecture', 'arch1', 'c1'), true);
+  assert.equal(attestedForSameSkillContent(prior, 'architecture', 'arch2', 'c1'), false, 'skill digest differs');
+  assert.equal(attestedForSameSkillContent(prior, 'skill-dev', 'sd1', 'c2'), false, 'no evidence path');
+  assert.equal(attestedForSameSkillContent({ ...prior, skillDigests: undefined }, 'architecture', 'arch1', 'c1'), false, 'a report from before per-skill digests never matches');
+  assert.equal(attestedForSameSkillContent({ ...prior, attested: false }, 'architecture', 'arch1', 'c1'), false);
+});

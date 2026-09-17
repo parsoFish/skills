@@ -3,6 +3,7 @@
 All notable changes to this repo. Conventional commits drive entries; one line per skill change.
 
 ## Unreleased
+- feat(gate): `--reuse-evals` reuses a case whenever its own skill's content digest matches the last attested report, so a squash merge or an unrelated skill change no longer re-buys it.
 
 ## 0.2.2 — 2026-09-17
 - fix(architecture): the deps extractor scans `.jsx`, `.cjs`, `.mts` and `.cts` files and recognises side-effect and dynamic `import()` specifiers, so `react-dom/client` in a `.jsx` file and a lazily-loaded package no longer read as unused (#4, #14).
