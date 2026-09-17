@@ -18,7 +18,7 @@ Generic to any software project by aligning with established architecture practi
 |---|---|---|
 | parts and what talks to what | C4 context + container | written model |
 | what is inside, is it what we think | C4 component ⟵ import graph, drift diff | generated + overlay |
-| where does it run | deployment view (device nodes for hardware) | written |
+| where does it run | deployment view (device nodes for hardware) | written: a `deployment { }` block + `deployment view deployment` in hand.c4, rendered by the kit; or deployment.md with a fence |
 | how does scenario X move through it | dynamic view (numbered) or sequence | written, ≥ kind minimum |
 | what events/schemas exist | schema & event catalogue | generated |
 | HTTP or CLI surface | OpenAPI / `--help` reference | generated |

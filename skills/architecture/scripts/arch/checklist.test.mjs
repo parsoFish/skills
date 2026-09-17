@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { requiredViews, checklistMd, VIEWS, viewShape } from './checklist.mjs';
+import { requiredViews, checklistMd, VIEWS, viewShape, presentFromViews } from './checklist.mjs';
 import { check } from './check.mjs';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -141,4 +141,17 @@ test('a fully-missing checklist is explicit (no blank rows) but fails checklist-
   const r = check(root);
   assert.equal(r.results.find(x => x.id === 'docs.no-blank-checklist').ok, true);
   assert.equal(r.results.find(x => x.id === 'docs.checklist-complete').ok, false);
+});
+
+test('the job-dag view is present once reference/jobs.md carries the jobs table', () => {
+  const s = viewShape('job-dag');
+  assert.equal(s.file, 'reference/jobs.md');
+  assert.equal(s.needsFence, false);
+  assert.deepEqual(s.needsTableColumns, ['source', 'file', 'job', 'schedule']);
+});
+
+test('presentFromViews maps rendered PNGs to the views they satisfy: index.png is context, deployment.png is deployment', () => {
+  assert.deepEqual(presentFromViews(['containers.png', 'deployment.png', 'index.png']), { context: 'reference/views/index.png', deployment: 'reference/views/deployment.png' });
+  assert.deepEqual(presentFromViews(['containers.png']), {});
+  assert.deepEqual(presentFromViews([]), {});
 });

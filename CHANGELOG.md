@@ -3,6 +3,13 @@
 All notable changes to this repo. Conventional commits drive entries; one line per skill change.
 
 ## Unreleased
+
+## 0.2.2 — 2026-09-17
+- fix(architecture): the deps extractor scans `.jsx`, `.cjs`, `.mts` and `.cts` files and recognises side-effect and dynamic `import()` specifiers, so `react-dom/client` in a `.jsx` file and a lazily-loaded package no longer read as unused (#4, #14).
+- fix(architecture): `arch run` inside an open stage-2 review refreshes the guard snapshot, and `guard close` applies the same check as `guard verify`, so a sanctioned revalidation is never reported as tampering and the two commands cannot disagree (#15).
+- feat(architecture): `answers.json` accepts `"answer": "n/a"` (or `notApplicable: true`) for any gap; the gap stays in `gaps.json` as `accepted` and is never re-raised in questions, project-changes or kit-issues (#3).
+- feat(architecture): `arch extract jobs` catalogues Makefile targets, job-named npm scripts, Kubernetes CronJobs, workflow `schedule` triggers and in-process `cron.schedule` calls into `reference/jobs.md`; the job-dag checklist row now points at it (#2).
+- feat(architecture): the legend declares `deploymentNode` kinds (environment, zone, node, device) so a hand-written `deployment { }` block and `deployment view deployment` in hand.c4 validate and render to `reference/views/deployment.png`, which satisfies the deployment checklist row (#1).
 - fix(attest): judge the attested commit's ancestry only when a ref still reaches it, so a squash-merged branch's dangling tip no longer fails `npm run attest` on the maintainer's clone (#13).
 - fix(gate): run every claude child with the auto-updater disabled and fail with a named HARNESS reason when the CLI version changes mid-run (#16).
 

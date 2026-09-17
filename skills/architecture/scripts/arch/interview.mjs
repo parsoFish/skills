@@ -106,6 +106,28 @@ export function buildGaps(inputs = {}) {
   return gaps;
 }
 
+const NOT_APPLICABLE_RE = /^\s*(n\/?a|not[\s-]applicable)\s*$/i;
+
+/** True for an answers.json entry that rules a gap out: `{"answer": "n/a"}` (any spelling) or `{"notApplicable": true}`. */
+export function isNotApplicable(entry) {
+  return Boolean(entry) && (entry.notApplicable === true || (typeof entry.answer === 'string' && NOT_APPLICABLE_RE.test(entry.answer)));
+}
+
+/** Pure: returns new gap objects with `accepted`, `acceptedAt`, `acceptedNote` set for every gap whose
+ * answers.json entry is not-applicable, so questions.md, project-changes and kit-issues can all honour
+ * the ruling instead of re-raising the gap on every run. Other answers leave the gap untouched. */
+export function applyAnswers(gaps, answers = {}) {
+  return gaps.map(g => {
+    const a = answers[g.id];
+    if (!isNotApplicable(a)) return g;
+    return { ...g, accepted: true, acceptedAt: a.at ?? null, acceptedNote: a.note ?? null };
+  });
+}
+
+function acceptedLine(g) {
+  return `accepted: not applicable (answers.json, ${g.acceptedAt ?? 'undated'})${g.acceptedNote ? ` — ${g.acceptedNote}` : ''}`;
+}
+
 export function interviewMd(gaps, answers = {}) {
   const pending = gaps.filter(g => g.class === 'human' && !(g.id in answers));
   const lines = ['# Interview', ''];
@@ -130,7 +152,7 @@ function classListMd(title, gaps, cls, extraLines) {
 }
 
 export function kitIssuesMd(gaps) {
-  return classListMd('Kit issues', gaps, 'kit', g => [`repro: ${g.evidence.join(', ') || 'none'}`]);
+  return classListMd('Kit issues', gaps, 'kit', g => [`repro: ${g.evidence.join(', ') || 'none'}`, ...(g.accepted ? [acceptedLine(g)] : [])]);
 }
 
 /**
@@ -151,7 +173,8 @@ export function reconcileProjectChanges(prev = [], gaps = [], now = new Date().t
   const out = [];
   for (const g of current) {
     const p = prevMap.get(g.id);
-    if (!p) out.push({ id: g.id, status: 'new', firstSeen: now, lastSeen: now });
+    if (g.accepted) out.push({ id: g.id, status: 'accepted', firstSeen: p?.firstSeen ?? now, lastSeen: now });
+    else if (!p) out.push({ id: g.id, status: 'new', firstSeen: now, lastSeen: now });
     else out.push({ id: g.id, status: p.status === 'resolved' ? 'regressed' : 'open', firstSeen: p.firstSeen ?? now, lastSeen: now });
   }
   for (const p of prev) {
@@ -171,6 +194,7 @@ export function projectChangesMd(gaps, changes = []) {
     ];
     const c = byId.get(g.id);
     if (c) lines.push(`status: ${c.status} (first seen: ${c.firstSeen}, last seen: ${c.lastSeen})`);
+    if (g.accepted) lines.push(acceptedLine(g));
     return lines;
   });
 }

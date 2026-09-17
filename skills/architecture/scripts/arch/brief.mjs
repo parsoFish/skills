@@ -20,6 +20,7 @@ function viewRecipe(view) {
   const s = viewShape(view);
   if (!s.file) return `${view}: no fixed file shape recorded for this view; see house-style.md's required-view table.`;
   if (view === 'adrs') return "adrs -> a real decision belongs at `<source root>/docs/decisions/NNN-title.md` (Nygard shape), only when it is evidenced in code or an existing doc, then re-run `arch run`; `decisions/README.md` is a generated index — never hand-edit it.";
+  if (view === 'deployment') return "deployment -> either add a `deployment { }` block to `architecture/model/hand.c4` (kinds: environment, zone, node, device; `instanceOf <system>.<component>`) plus `views { deployment view deployment { include * } }`, which `arch run` renders to `reference/views/deployment.png`; or write `architecture/deployment.md` with a mermaid fence (```mermaid) or <svg>.";
   if (/^reference\//.test(s.file)) return `${view} -> \`${s.file}\` is generated from extractor data, not hand-written; find the matching gap in section 7 (class kit or project) and fix the underlying signal or record it as accepted — never write under \`reference/\` directly.`;
   const shapeBits = [s.needsFence ? 'a mermaid fence (```mermaid) or <svg>' : null, s.needsTableColumns.length ? `a table with columns: ${s.needsTableColumns.join(', ')}` : null].filter(Boolean);
   const shape = shapeBits.length ? shapeBits.join(' plus ') : 'prose covering the question this view answers (house-style.md)';

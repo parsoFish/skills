@@ -16,6 +16,7 @@ export function table(headers, rows) {
 const META = {
   deps: { title: 'Dependencies', command: 'extract deps' },
   delivery: { title: 'Delivery', command: 'extract delivery' },
+  jobs: { title: 'Jobs', command: 'extract jobs' },
   'ext-points': { title: 'Extension Points', command: 'extract ext-points' },
   api: { title: 'API Surface', command: 'extract api' },
   tests: { title: 'Tests', command: 'extract tests' },
@@ -45,6 +46,14 @@ function deliveryBody(json) {
     }
   }
   const body = ['One row per job; jobs whose `needs` names a missing job sort first.', '', table(['file', 'job', 'needs', 'runs-on', 'steps'], [...flagged, ...rest])];
+  if (json.notes?.length) body.push('', ...json.notes.map(n => `- ${n}`));
+  return body.join('\n');
+}
+
+function jobsBody(json) {
+  const rows = [...json.jobs].sort((a, b) => (Boolean(a.schedule) === Boolean(b.schedule) ? 0 : a.schedule ? -1 : 1));
+  const body = ['One row per job the checkout shows; scheduled jobs sort first.', '',
+    table(['source', 'file', 'job', 'schedule', 'command'], rows.map(j => [j.source, j.file, j.id, j.schedule ?? '', j.command ?? '']))];
   if (json.notes?.length) body.push('', ...json.notes.map(n => `- ${n}`));
   return body.join('\n');
 }
@@ -113,7 +122,7 @@ function fitnessBody(json) {
     table(['id', 'ok', 'detail'], [...failing, ...passing].map(r => [r.id, r.ok ? 'yes' : 'no', (r.detail ?? []).slice(0, 3).join(', ')]))].join('\n');
 }
 
-const BODIES = { deps: depsBody, delivery: deliveryBody, 'ext-points': extPointsBody, api: apiBody, tests: testsBody, env: envBody, ui: uiBody, components: componentsBody, drift: driftBody, fitness: fitnessBody };
+const BODIES = { deps: depsBody, delivery: deliveryBody, jobs: jobsBody, 'ext-points': extPointsBody, api: apiBody, tests: testsBody, env: envBody, ui: uiBody, components: componentsBody, drift: driftBody, fitness: fitnessBody };
 
 /** Markdown for one kit artifact kind: header, H1, one meaning line, then red-flags-first tables. */
 export function toMarkdown(kind, json, { command } = {}) {

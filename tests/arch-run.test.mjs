@@ -52,3 +52,22 @@ test('without --out, arch refuses to write into an existing docs tree it does no
   assert.equal(code, 3);
   assert.deepEqual(readdirSync(join(root, 'docs', 'reference')), ['handwritten.md'], 'nothing written');
 });
+
+test('a forced kit revalidation during stage 2 is not tampering: guard verify passes after it, and close refuses only a real hand edit', { timeout: 240_000 }, () => {
+  const root = project();
+  const out = mkdtempSync(join(tmpdir(), 'out-'));
+  const arch = (...a) => { try { return { code: 0, out: execFileSync('node', [ARCH, ...a, root, '--out', out], { stdio: 'pipe', encoding: 'utf8' }) }; } catch (e) { return { code: e.status, out: String(e.stdout) + String(e.stderr) }; } };
+  assert.equal(arch('run', '--no-render').code, 0);
+  assert.equal(arch('guard', 'snapshot').code, 0);
+  // the agent seeds a context edge in hand.c4, which changes what the kit generates on the next run
+  const hand = join(out, 'architecture', 'model', 'hand.c4');
+  writeFileSync(hand, readFileSync(hand, 'utf8') + "\n// reviewer note added during stage 2\n");
+  assert.equal(arch('run', '--no-render', '--force').code, 0);
+  const verified = arch('guard', 'verify');
+  assert.equal(verified.code, 0, verified.out);
+  writeFileSync(join(out, 'reference', 'deps.md'), 'hand-edited by the agent\n');
+  assert.equal(arch('guard', 'verify').code, 1);
+  const closed = arch('guard', 'close');
+  assert.equal(closed.code, 1, closed.out);
+  assert.equal(existsSync(join(out, 'architecture', '_run', '.stage2-done')), false, 'close must not write the marker over tampering');
+});

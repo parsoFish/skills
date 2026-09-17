@@ -4,7 +4,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname, sep } from 'node:path';
 import { walkFiles, isTestPath } from './walk.mjs';
 
-const CODE_EXT = /\.(ts|tsx|js|mjs)$/;
+const CODE_EXT = /\.(ts|tsx|js|jsx|mjs|cjs|mts|cts)$/;
 const IMPORT_SITE_LIMIT = 8;
 const LOCKFILES = ['package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'go.sum'];
 
@@ -62,7 +62,9 @@ function parseTfProviders(text) {
 
 // files: relative posix paths from walkFiles.
 function findImportSites(root, files, name) {
-  const re = new RegExp(`from\\s+['"]${escapeRe(name)}(?:/[^'"]*)?['"]|require\\(\\s*['"]${escapeRe(name)}(?:/[^'"]*)?['"]\\s*\\)`);
+  // `from 'x'`, `import 'x'` (side effect), `import('x')` (dynamic) and `require('x')`, each with an optional
+  // subpath (`x/client`); the closing quote right after the name keeps `react` from matching `react-dom`.
+  const re = new RegExp(`(?:\\bfrom\\s*|\\bimport\\s*\\(?\\s*|\\brequire\\s*\\(\\s*)['"]${escapeRe(name)}(?:/[^'"]*)?['"]`);
   const sites = [];
   for (const rel of files) {
     if (sites.length >= IMPORT_SITE_LIMIT) break;
