@@ -3,6 +3,7 @@
 All notable changes to this repo. Conventional commits drive entries; one line per skill change.
 
 ## Unreleased
+- fix(gate): run every claude child with the auto-updater disabled and fail with a named HARNESS reason when the CLI version changes mid-run (#16).
 
 ## 0.2.1 — 2026-09-13
 - docs(architecture): `references/house-style.md` states it is the specification of record.

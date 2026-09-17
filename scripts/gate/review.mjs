@@ -54,7 +54,7 @@ export function runStructuralReview(root, skill, config, run = spawnSync) {
     '--max-turns', '25',
     '--max-budget-usd', String(config.reviewBudgetUsd),
     ...LEAN_FLAGS,
-  ], { cwd: root, encoding: 'utf8', maxBuffer: 1 << 26 });
+  ], { cwd: root, encoding: 'utf8', maxBuffer: 1 << 26, env: { ...process.env, DISABLE_AUTOUPDATER: '1' } });
   const { verdict, costUsd } = parseReviewOutput((r.stdout ?? '') + (r.stderr ?? ''));
   const ok = r.status === 0 && verdict?.verdict === 'pass';
   const findings = verdict?.findings ?? [];

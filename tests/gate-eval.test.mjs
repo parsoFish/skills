@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { caseNames, evalCoverage, readEvalResult, aggregateEvals, harnessProblem, sandboxEnv, canReuseEval } from '../scripts/gate/eval.mjs';
+import { caseNames, evalCoverage, readEvalResult, aggregateEvals, harnessProblem, sandboxEnv, canReuseEval, versionDrift } from '../scripts/gate/eval.mjs';
 
 const CFG = { threshold: 0.8, minDelta: 0.25 };
 
@@ -135,4 +135,25 @@ test('attestedForSameContent: a prior attested report with the same skillsDigest
   assert.equal(attestedForSameContent(prior, 'zzz', 'c1'), false, 'digest differs');
   assert.equal(attestedForSameContent({ ...prior, attested: false }, 'abc', 'c1'), false);
   assert.equal(attestedForSameContent(null, 'abc', 'c1'), false);
+});
+
+test('sandboxEnv disables the Claude Code auto-updater so the binary cannot be replaced under a running case', () => {
+  const env = sandboxEnv({ PATH: '/usr/bin', HOME: '/h' }, { readable: () => true, tmpHome: () => '/tmp/gh', link: () => {}, copy: () => {} });
+  assert.equal(env.DISABLE_AUTOUPDATER, '1');
+});
+
+test('harnessProblem names the auto-update race when a case died spawning the claude binary', () => {
+  const j = { cases: [{ arms: { with: [{ error: "Error: EACCES: permission denied, posix_spawn '/x/node_modules/@anthropic-ai/claude-code/bin/claude.exe'" }] } }] };
+  assert.match(harnessProblem(j), /auto-update/);
+  assert.match(harnessProblem(j), /--reuse-evals/);
+});
+
+test('versionDrift is silent when the CLI version is unchanged or unknown, and names both versions when it changed', () => {
+  assert.equal(versionDrift('2.1.269', '2.1.269'), '');
+  assert.equal(versionDrift('2.1.269', null), '');
+  assert.equal(versionDrift(null, '2.1.274'), '');
+  const msg = versionDrift('2.1.269', '2.1.274');
+  assert.match(msg, /2\.1\.269/);
+  assert.match(msg, /2\.1\.274/);
+  assert.match(msg, /--reuse-evals/);
 });

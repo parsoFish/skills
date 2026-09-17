@@ -75,6 +75,7 @@ export function harnessProblem(json) {
   if (/keychain credential helpers|PATH directory/i.test(e)) return 'unreadable PATH entries block the sandbox — the gate already sanitises PATH; check SKILLS_GATE_REAL_HOME';
   if (/Docker .*credential store/i.test(e)) return 'Docker credential store symlinks block the sandbox — the gate already swaps HOME; check ~/.docker';
   if (/Not logged in/i.test(e)) return 'Claude is not logged in under the gate HOME — run `claude /login` and re-run';
+  if (/EACCES.*posix_spawn.*claude/i.test(e)) return 'the claude binary was replaced under the run (auto-update race) — re-run with --reuse-evals; the gate now disables the updater for its children';
   return `every run errored before the first turn: ${e.slice(0, 160)}`;
 }
 
@@ -94,7 +95,9 @@ export function sandboxEnv(env = process.env, fsApi = {
     fsApi.link(join(env.HOME, '.claude'), join(home, '.claude'));
     fsApi.copy(join(env.HOME, '.claude.json'), join(home, '.claude.json'));
   }
-  return { ...env, PATH: path, HOME: home, DOCKER_CONFIG: join(home, '.docker-none'), SKILLS_GATE_REAL_HOME: env.HOME ?? '' };
+  // The auto-updater replaces the CLI binary in place; a case that spawns during the swap dies with
+  // EACCES. Every child the gate starts runs with the updater off.
+  return { ...env, PATH: path, HOME: home, DOCKER_CONFIG: join(home, '.docker-none'), SKILLS_GATE_REAL_HOME: env.HOME ?? '', DISABLE_AUTOUPDATER: '1' };
 }
 
 /** Pure: a stored `claude plugin eval` result may stand in for a fresh run only when it started after
@@ -103,4 +106,11 @@ export function canReuseEval(json, lastChangeEpoch) {
   if (!json || !json.startedAt || lastChangeEpoch == null) return false;
   const started = Date.parse(json.startedAt);
   return Number.isFinite(started) && started / 1000 > lastChangeEpoch;
+}
+
+/** Pure: '' when the CLI version is unchanged or unknown on either side; otherwise the HARNESS reason
+ * for a run whose later cases ran on a different binary than its earlier ones. */
+export function versionDrift(before, after) {
+  if (!before || !after || before === after) return '';
+  return `Claude Code changed version mid-run (${before} → ${after}): the auto-updater replaced the binary — re-run with --reuse-evals`;
 }
