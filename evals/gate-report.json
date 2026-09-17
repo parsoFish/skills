@@ -4,10 +4,10 @@
  "attested": true,
  "agenticRan": true,
  "bypass": null,
- "generatedAt": "2026-09-17T21:31:05.068Z",
- "commit": "0997a567734b4d58eea6c82d0570a9e3e06de45c",
+ "generatedAt": "2026-09-17T22:19:46.937Z",
+ "commit": "5bedb9898315c0cd2615d45ae06b0b0c1c8b5d56",
  "claudeVersion": "2.1.274",
- "pluginVersion": "0.2.1",
+ "pluginVersion": "0.2.2",
  "scope": {
   "skills": [
    "architecture",
@@ -83,9 +83,9 @@
     "delta": 1,
     "partial": false,
     "errors": [],
-    "turns": 75,
-    "costUsd": 2.1715293999999994,
-    "durationSeconds": 827,
+    "turns": 69,
+    "costUsd": 1.9406484000000004,
+    "durationSeconds": 781,
     "exit": 0
    },
    {
@@ -99,9 +99,9 @@
     "delta": 1,
     "partial": false,
     "errors": [],
-    "turns": 119,
-    "costUsd": 2.6435867999999996,
-    "durationSeconds": 928,
+    "turns": 130,
+    "costUsd": 3.2837104000000004,
+    "durationSeconds": 1061,
     "exit": 0
    },
    {
@@ -115,9 +115,9 @@
     "delta": 1,
     "partial": false,
     "errors": [],
-    "turns": 13,
-    "costUsd": 0.3422016,
-    "durationSeconds": 103,
+    "turns": 14,
+    "costUsd": 0.3622114,
+    "durationSeconds": 110,
     "exit": 0
    },
    {
@@ -142,14 +142,14 @@
     "model": "claude-sonnet-5",
     "judge": "claude-haiku-4-5",
     "evidence": "evals/attest/adds-a-csv-to-table-skill.json",
-    "score": 1,
+    "score": 0.8571428571428571,
     "scoreWithout": 0.5714285714285714,
-    "delta": 0.4285714285714286,
+    "delta": 0.2857142857142857,
     "partial": false,
     "errors": [],
-    "turns": 23,
-    "costUsd": 0.8226616000000002,
-    "durationSeconds": 279,
+    "turns": 32,
+    "costUsd": 0.9616765999999999,
+    "durationSeconds": 291,
     "exit": 0
    }
   ]
@@ -158,35 +158,31 @@
   "architecture": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.26606019999999997
+   "costUsd": 0.2774934
   },
   "eval-authoring": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.12361119999999999
+   "costUsd": 0.129638
   },
   "skill-dev": {
    "verdict": "pass",
    "findings": [
     {
      "severity": "minor",
-     "finding": "Skill ships no scripts/ or assets/ directory — expected for a process/workflow skill with no deterministic tooling of its own, but worth confirming that's intentional rather than an omission, since sibling skills in this repo (e.g. eval-authoring) do ship scripts."
+     "finding": "SKILL.md references `references/rationale.md` only as backticked plain text (line 10), not as a markdown link, unlike every other skill in the repo (architecture, eval-authoring all use `[references/x.md](references/x.md)` links). Not a dead link since there's no link syntax to break, but it's inconsistent with the repo's progressive-disclosure linking convention and slightly hurts navigability."
     }
    ],
-   "costUsd": 0.1255002
+   "costUsd": 0.1181606
   }
  },
  "totals": {
-  "costUsd": 6.999686999999998,
-  "durationSeconds": 2331
+  "costUsd": 7.5780748,
+  "durationSeconds": 2437
  },
- "skillsDigest": "23c2942493bc31f647465b7b8be4c3ddcf6ee48b53e16113575285c82eb8d032",
- "harnessDigest": "f0898fe6125aca6e11be3372a6ccbfd4c39cd2578c2ac0067986ab72cba61e2f",
+ "skillsDigest": "0f70ddebfd2ee39031ab1bc58c1df5ac115603fcd6ff1e48fc3e52607544fda5",
+ "harnessDigest": "3bfefe2eea002f86ca2fcbfc58482ffda2ff3d453ae2616a9cf3bcd8b2fe9f43",
  "reusedEvals": [
-  "document-a-terraform-repo",
-  "document-a-ts-monorepo",
-  "drift-catches-a-new-edge",
-  "writes-a-case-for-changelog-line",
-  "adds-a-csv-to-table-skill"
+  "writes-a-case-for-changelog-line"
  ]
 }

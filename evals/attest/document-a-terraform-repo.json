@@ -1,9 +1,9 @@
 {
  "schemaVersion": 1,
  "claudeVersion": "2.1.274",
- "startedAt": "2026-09-17T13:05:46.465Z",
- "durationSeconds": 827,
- "costUsd": 2.1715293999999994,
+ "startedAt": "2026-09-17T21:39:55.887Z",
+ "durationSeconds": 781,
+ "costUsd": 1.9406484000000004,
  "partial": false,
  "suite": {
   "ablation": "with-without",
@@ -74,11 +74,11 @@
      {
       "score": 1,
       "passed": true,
-      "turns": 75,
-      "costUsd": 2.0369551999999995,
-      "judgeCostUsd": 0.004749,
-      "durationSeconds": 777,
-      "startedAt": "2026-09-17T13:05:46.503Z",
+      "turns": 69,
+      "costUsd": 1.8045256000000003,
+      "judgeCostUsd": 0.004524,
+      "durationSeconds": 737,
+      "startedAt": "2026-09-17T21:39:55.935Z",
       "error": null,
       "skippedPaidGraders": false,
       "graders": [
@@ -110,7 +110,7 @@
          true,
          true
         ],
-        "evidence": "# Overview\n\n## What this is\n\nA Terraform configuration (`aws` provider only) with two child modules called from the\nroot: `modules/network` and `modules/app` (`main.tf:14-20`). There is no README, package\nmanifest, or other repo metadata naming the project — `system` below is the kit's\ndirectory-derived id, not a name declared anywhere in the checkout.\n\n## Context\n\n```mermaid\nflowchart LR\n  operator[\"Operator (human)\"] -->|\"runs terraform plan / apply\"| system[\"system\\n(this Terraform configuration)\"]\n  system -->|\"provisions resources via the aws provider\"| aws[\"AWS (external)\"]\n```\n\n- `operator` and `aws` are the only context-level parties evidenced by the code: a human\n  invokes Terraform, and the `aws` provider block (`main.tf:2-12`) talks to AWS. No CI\n  system, remote git host, log sink, or workspace/state backend is declared anywhere in\n  the checkout, so none of those are modelled — see Unknowns below.\n- `docs/architecture/model/hand.c4` carries this same context as a LikeC4 model; a\n  rendered PNG could not be produced in this environment (see Unknowns).\n\n## Containers / modules\n\nThe root module (`main.tf`) calls two child modules and does nothing else:\n\n```mermaid\nflowchart LR\n  root[\"root (main.tf)\"] --> network[\"modules/network\"]\n  root[\"root (main.tf)\"] --> app[\"modules/app\"]\n  network -->|\"aws_vpc.main\"| aws[\"AWS\"]\n  app -->|\"aws_instance.web, aws_instance.worker\"| aws\n```\n\n| module | source | calls from | resources it declares |\n| --- | --- | --- | --- |\n| network | `./modules/network` | `main.tf` | `aws_vpc.main` (`modules/network/main.tf:1-3`) |\n| app | `./modules/app` | `main.tf` | `aws_instance.web`, `aws_instance.worker` (`modules/app/main.tf:1-9`) |\n\nThe full module/provider/resource inventory (generated, not hand-written) is at\n`docs/reference/infra.md`. The component/import graph at `docs/reference/components.md`\nis empty by design: the fold-rules scan (`docs/architecture/fold-rules.json`) targets\n`modules/`, and Terraform module calls are not import statements the generic scanner\nresolves — the Terraform-specific graph in `infra.md` is the authoritative one for this\nrepo.\n\nNote: `modules/network` and `modules/app` are both called from root but nothing in\neither module's code references the other — `modules/app/main.tf` has no\n`vpc_security_group_ids`, `subnet_id`, or any input wired from `modules/network`'s VPC,\nand `modules/network/main.tf` declares no `output` block a caller could consume. As\nwritten, the two modules do not compose; see `docs/architecture/risks.md`.\n\n## Providers\n\nOne provider, evidenced at `main.tf:1-12`:\n\n| name | source | version constraint | configured in |\n| --- | --- | --- | --- |\n| aws | hashicorp/aws | ~> 5.0 | `main.tf:10-12` (`region = \"us-east-1\"`) |\n\nNeither child module declares its own `terraform`/`required_providers` block; both\ninherit the root's `aws` provider (standard Terraform behavior for a provider passed\nimplicitly to child modules with no `providers = {}` argument at the call site).\n\n## Resource inventory\n\nGenerated from the checkout at `docs/reference/infra.md`; summarized here:\n\n| type | count | where |\n| --- | --- | --- |\n| aws_vpc | 1 | `modules/network/main.tf:1-3` |\n| aws_instance | 2 | `modules/app/main.tf:1-9` |\n\nNo other resource types, data sources, or provisioners appear anywhere in the checkout.\n\n## Unknowns (GAP)\n\n- GAP: no rendered C4 view. LikeC4 rendering needs `npx` to fetch the `likec4` package;\n  this environment's sandbox denied `registry.npmjs.org` (`docs/architecture/_run/run.md`),\n  so the context view image was not produced. The `hand.c4`/`generated.c4` model text is\n  present and should render once network access to the npm registry is available.\n- GAP: no remote state backend is declared (no `backend` block in `main.tf`), so where\n  Terraform state is actually stored when this is run is not shown by the code.\n- GAP: no CI/CD pipeline exists in the checkout (no `.github/workflows`, no other CI\n  config found) — `docs/reference/delivery.md` is correctly empty, not a GAP in the\n  extractor, but the required \"pipeline\" view has nothing to show either.\n- GAP: no documented architecture decisions exist (no `docs/decisions/` or `docs/adr/` in\n  the checkout), so no ADR index could be generated without inventing a decision that was\n  never recorded.\n- GAP: the AWS credentials used when `terraform apply` runs are not shown by the code —\n  see `docs/architecture/secrets.md`.\n- GAP: no owner, maintainer, or contact is recorded anywhere in the checkout (no README,\n  CODEOWNERS, or similar).\n"
+        "evidence": "generated by: written (synthesis of docs/reference/infra.md, deps.md, delivery.md, fitness.md and this checkout)\nsource: 7c4476f\n\n# Overview\n\n## What this repository is\n\nA three-file Terraform root configuration (kind: `iac`, `docs/architecture/_run/classify.json` evidence: `*.tf present`). There is no README, no CI config, no tests, no variables, and no state backend anywhere in the checkout.\n\n## Context\n\nThe root configuration (`main.tf`) is applied by a human operator running the Terraform CLI. It talks to two things:\n- **AWS**, via the `aws` provider (`main.tf:1-8` pins `hashicorp/aws ~> 5.0`; `main.tf:10-12` sets `region = \"us-east-1\"`) — every resource in the tree is `aws_*`.\n- **The local workspace**, because no `backend` block is declared, so Terraform state defaults to a local `terraform.tfstate` file.\n\nNo other system is evidenced: there is no git remote configured (`git remote -v` returns nothing) and no `.github/workflows`, so the seeded template edges to GitHub and to a log store were removed from `docs/architecture/model/hand.c4` rather than kept unevidenced. Rendered PNGs for this context/container view could not be produced this run — see [Gaps](#gaps-and-limitations).\n\n## Module call graph\n\n```mermaid\nflowchart LR\n  root[\"root (main.tf)\"] --> network[\"module.network\\n(./modules/network)\"]\n  root --> app[\"module.app\\n(./modules/app)\"]\n```\n\n`root` calls both child modules (`main.tf:14-20`). Neither module declares an input variable or an output, and the root module passes no value between them, so **`app` and `network` are not wired to each other** — this is also flagged in `docs/architecture/risks.md`, row 1. Full detail: `docs/reference/infra.md`.\n\n## Providers\n\n| name | version | evidence |\n| --- | --- | --- |\n| aws | ~> 5.0 | `main.tf:3-6` |\n\nExactly one provider is declared and used. `docs/reference/deps.md` also lists `aws` as `unused` — that is a false positive of the dependency extractor, not a real finding; see [Gaps](#gaps-and-limitations).\n\n## Resource inventory\n\n| type | name | module | file |\n| --- | --- | --- | --- |\n| aws_vpc | main | network | `modules/network/main.tf:1-3` |\n| aws_instance | web | app | `modules/app/main.tf:1-4` |\n| aws_instance | worker | app | `modules/app/main.tf:6-9` |\n\n3 resources, 2 types, across 2 modules. Full detail: `docs/reference/infra.md`.\n\n## What the config does not declare\n\nConfirmed absent by directly reading the tree, not inferred: `variables.tf`/input variables, `outputs.tf`/outputs, a `backend` block, a `required_version` constraint, resource `tags`, `.tfvars` files, a `.gitignore`, CI/CD config (`.github/workflows` or equivalent), a test suite, and lint/policy config (`.tflint.hcl`, checkov, etc.).\n\n## Gaps and limitations\n\nSee `docs/architecture/_run/kit-issues.md` (tooling limitations), `docs/architecture/_run/review.md` (project-facing findings), and `docs/architecture/_run/interview.md` (open questions for a human). Summary:\n- The rendered C4 PNGs (context/container/component views) could not be produced this run: LikeC4 rendering needs `npx`, which needs network access to `registry.npmjs.org`, and that host was denied by the sandbox. `docs/architecture/model/hand.c4` and `generated.c4` are the source of truth for the views the images would have shown.\n- `docs/reference/components.md` shows 0 components/edges. The kit's import-graph engines (`builtin`, `go`, `dependency-cruiser`) parse source-code imports; none of them parse HCL/Terraform module blocks, so the module call graph is only captured in `docs/reference/infra.md`, not `components.md`.\n- `docs/reference/deps.md` marks the `aws` provider `unused` because the dependency extractor looks for an import-style usage site; it has no notion that a Terraform provider is used implicitly by every `aws_*` resource block. Treat that row as a known false positive, not a real orphaned dependency.\n- Whether `ami-123456` (`modules/app/main.tf:2,7`) is a valid AMI in the target account/region cannot be determined from the code — it is shorter than a real AWS AMI id.\n- Which credential source (env vars, shared config file, instance profile, SSO) is used when `terraform apply` runs cannot be determined from the code — the `aws` provider block sets only `region`.\n- Whether the account default VPC (rather than `aws_vpc.main`) receiving the two instances is intentional or an oversight cannot be determined from the code.\n"
        },
        {
         "name": "skill-fired",
@@ -128,10 +128,10 @@
       "score": 0,
       "passed": false,
       "turns": 8,
-      "costUsd": 0.1345742,
+      "costUsd": 0.13612280000000002,
       "judgeCostUsd": 0,
-      "durationSeconds": 50,
-      "startedAt": "2026-09-17T13:18:43.043Z",
+      "durationSeconds": 44,
+      "startedAt": "2026-09-17T21:52:13.020Z",
       "error": null,
       "skippedPaidGraders": false,
       "graders": [
