@@ -4,8 +4,8 @@
  "attested": true,
  "agenticRan": true,
  "bypass": null,
- "generatedAt": "2026-09-17T21:17:24.499Z",
- "commit": "754e01071a930d50fbfdf13a2982382c441356ad",
+ "generatedAt": "2026-09-17T21:25:43.044Z",
+ "commit": "a4e229ec12df5f83bdcef0c074185a097ddc4354",
  "claudeVersion": "2.1.274",
  "pluginVersion": "0.2.1",
  "scope": {
@@ -157,33 +157,44 @@
  "review": {
   "architecture": {
    "verdict": "pass",
-   "findings": [],
-   "costUsd": 0.35490099999999997
-  },
-  "eval-authoring": {
-   "verdict": "pass",
    "findings": [
     {
      "severity": "minor",
-     "finding": "SKILL.md section 6 heading ('Two traps that make a grader pass for the wrong reason') is a noun phrase rather than an imperative verb-first heading, unlike the other six section headings, and several paragraphs (e.g. under sections 4 and 6) are expository/reasoning prose rather than terse imperative instructions. Not a functional defect."
+     "finding": "SKILL.md frontmatter description is a single very long sentence-chain (~100 words); still third-person, names trigger phrases, and says when to use it, but could be tightened for scanability without losing the trigger phrases."
+    },
+    {
+     "severity": "minor",
+     "finding": "references/stage2.md (79 lines) spends its first ~30 lines narrating a specific past measured run ('a ~78-file TypeScript service ... needed 260 turns') as justification for the 120-turn budget. This is not author/project-identifying, but it's historical rationale rather than imperative instruction — arguably belongs compressed into a single 'why' note rather than a full incident narrative, per the 'rationale in references/' pattern used elsewhere in this repo."
+    },
+    {
+     "severity": "minor",
+     "finding": "assets/fold-rules.json ships opinionated defaults (e.g. include regex '^(src|apps|packages|lib)') tailored to a JS/TS monorepo layout; SKILL.md does instruct the agent to adjust it to the repo layout, so this is a seed/example rather than a hardcoded assumption, but worth confirming it's clearly labeled as a starting template (it is, via Stage 0 instructions) rather than a fixed rule."
     }
    ],
-   "costUsd": 0.090425
+   "costUsd": 0.1790626
+  },
+  "eval-authoring": {
+   "verdict": "pass",
+   "findings": [],
+   "costUsd": 0.14244099999999998
   },
   "skill-dev": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.0983884
+   "costUsd": 0.08400780000000002
   }
  },
  "totals": {
-  "costUsd": 7.028229799999998,
+  "costUsd": 6.8900267999999985,
   "durationSeconds": 2331
  },
  "skillsDigest": "23c2942493bc31f647465b7b8be4c3ddcf6ee48b53e16113575285c82eb8d032",
- "harnessDigest": "aa2df639e1f50ec40d76ed594b2eaf97a53b9ff9ad269d2c40bf1c20b0ffaf81",
+ "harnessDigest": "bc2002582d452a31e879cef38b37a307eaf3ab33c14406480878f1ccddc4241e",
  "reusedEvals": [
   "document-a-terraform-repo",
-  "document-a-ts-monorepo"
+  "document-a-ts-monorepo",
+  "drift-catches-a-new-edge",
+  "writes-a-case-for-changelog-line",
+  "adds-a-csv-to-table-skill"
  ]
 }

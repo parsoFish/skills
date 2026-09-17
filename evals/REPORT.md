@@ -4,11 +4,11 @@
 | field | value |
 | --- | --- |
 | skillsDigest | `23c2942493bc` |
-| commit | `754e01071a930d50fbfdf13a2982382c441356ad` |
-| generatedAt | 2026-09-17T21:17:24.499Z |
+| commit | `a4e229ec12df5f83bdcef0c074185a097ddc4354` |
+| generatedAt | 2026-09-17T21:25:43.044Z |
 | claudeVersion | 2.1.274 |
 | pluginVersion | 0.2.1 |
-| total cost | $7.03 |
+| total cost | $6.89 |
 | total duration | 38.9 min |
 
 ## Deterministic steps
@@ -94,9 +94,9 @@
 
 | skill | verdict | findings | cost |
 | --- | --- | --- | --- |
-| architecture | pass | none | $0.35 |
-| eval-authoring | pass | [minor] SKILL.md section 6 heading ('Two traps that make a grader pass for the wrong reason') is a noun phrase rather than an imperative verb-first heading, unlike the other six section headings, and several paragraphs (e.g. under sections 4 and 6) are expository/reasoning prose rather than terse imperative instructions. Not a functional defect. | $0.09 |
-| skill-dev | pass | none | $0.10 |
+| architecture | pass | [minor] SKILL.md frontmatter description is a single very long sentence-chain (~100 words); still third-person, names trigger phrases, and says when to use it, but could be tightened for scanability without losing the trigger phrases.; [minor] references/stage2.md (79 lines) spends its first ~30 lines narrating a specific past measured run ('a ~78-file TypeScript service ... needed 260 turns') as justification for the 120-turn budget. This is not author/project-identifying, but it's historical rationale rather than imperative instruction — arguably belongs compressed into a single 'why' note rather than a full incident narrative, per the 'rationale in references/' pattern used elsewhere in this repo.; [minor] assets/fold-rules.json ships opinionated defaults (e.g. include regex '^(src\|apps\|packages\|lib)') tailored to a JS/TS monorepo layout; SKILL.md does instruct the agent to adjust it to the repo layout, so this is a seed/example rather than a hardcoded assumption, but worth confirming it's clearly labeled as a starting template (it is, via Stage 0 instructions) rather than a fixed rule. | $0.18 |
+| eval-authoring | pass | none | $0.14 |
+| skill-dev | pass | none | $0.08 |
 
 ## Re-run
 
@@ -115,9 +115,9 @@ setsid nohup node scripts/gate.mjs --all --force > /tmp/gate.log 2>&1 &
 ## Recent ledger
 
 ```
-| 2026-09-12 | 0c69792 | architecture+eval-authoring+skill-dev | 5 cases | $6.26 | 33.5 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |
 | 2026-09-12 | 3e45e70 | architecture+eval-authoring+skill-dev | 5 cases | $6.36 | 33.5 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |
 | 2026-09-12 | ecde860 | architecture+eval-authoring+skill-dev | 5 cases | $6.20 | 33.5 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |
 | 2026-09-12 | 8a56568 | architecture+eval-authoring+skill-dev | 5 cases | $6.32 | 33.5 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |
 | 2026-09-17 | 754e010 | architecture+eval-authoring+skill-dev | 5 cases | $7.03 | 38.9 min | sonnet-5/haiku-4-5 | PASS (reused 2 eval results) |
+| 2026-09-17 | a4e229e | architecture+eval-authoring+skill-dev | 5 cases | $6.89 | 38.9 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |
 ```
