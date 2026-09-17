@@ -4,10 +4,10 @@
  "attested": true,
  "agenticRan": true,
  "bypass": null,
- "generatedAt": "2026-09-12T18:36:56.620Z",
- "commit": "8a56568778a462b022e62dcb6939d3766fde917f",
- "claudeVersion": "2.1.269",
- "pluginVersion": "0.2.0",
+ "generatedAt": "2026-09-17T21:17:24.499Z",
+ "commit": "754e01071a930d50fbfdf13a2982382c441356ad",
+ "claudeVersion": "2.1.274",
+ "pluginVersion": "0.2.1",
  "scope": {
   "skills": [
    "architecture",
@@ -83,9 +83,9 @@
     "delta": 1,
     "partial": false,
     "errors": [],
-    "turns": 88,
-    "costUsd": 2.0592141999999996,
-    "durationSeconds": 735,
+    "turns": 75,
+    "costUsd": 2.1715293999999994,
+    "durationSeconds": 827,
     "exit": 0
    },
    {
@@ -99,9 +99,9 @@
     "delta": 1,
     "partial": false,
     "errors": [],
-    "turns": 93,
-    "costUsd": 2.1035097999999994,
-    "durationSeconds": 713,
+    "turns": 119,
+    "costUsd": 2.6435867999999996,
+    "durationSeconds": 928,
     "exit": 0
    },
    {
@@ -116,8 +116,8 @@
     "partial": false,
     "errors": [],
     "turns": 13,
-    "costUsd": 0.420957,
-    "durationSeconds": 118,
+    "costUsd": 0.3422016,
+    "durationSeconds": 103,
     "exit": 0
    },
    {
@@ -131,9 +131,9 @@
     "delta": 0.33333333333333337,
     "partial": false,
     "errors": [],
-    "turns": 23,
-    "costUsd": 0.5088092,
-    "durationSeconds": 214,
+    "turns": 19,
+    "costUsd": 0.5045360000000001,
+    "durationSeconds": 194,
     "exit": 0
    },
    {
@@ -147,9 +147,9 @@
     "delta": 0.4285714285714286,
     "partial": false,
     "errors": [],
-    "turns": 21,
-    "costUsd": 0.6749372,
-    "durationSeconds": 232,
+    "turns": 23,
+    "costUsd": 0.8226616000000002,
+    "durationSeconds": 279,
     "exit": 0
    }
   ]
@@ -158,30 +158,32 @@
   "architecture": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.3532144
+   "costUsd": 0.35490099999999997
   },
   "eval-authoring": {
    "verdict": "pass",
-   "findings": [],
-   "costUsd": 0.10955219999999999
+   "findings": [
+    {
+     "severity": "minor",
+     "finding": "SKILL.md section 6 heading ('Two traps that make a grader pass for the wrong reason') is a noun phrase rather than an imperative verb-first heading, unlike the other six section headings, and several paragraphs (e.g. under sections 4 and 6) are expository/reasoning prose rather than terse imperative instructions. Not a functional defect."
+    }
+   ],
+   "costUsd": 0.090425
   },
   "skill-dev": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.09385079999999998
+   "costUsd": 0.0983884
   }
  },
  "totals": {
-  "costUsd": 6.324044799999999,
-  "durationSeconds": 2012
+  "costUsd": 7.028229799999998,
+  "durationSeconds": 2331
  },
- "skillsDigest": "d701aa223cf93ae9602f03d9dc521361f5c46ec8bdb680f753a43d915057892f",
- "harnessDigest": "eb8d1dd4b1b612cf6b557ab7ca427c3b7fba4a9a2a146d56bb8ac43adca2ad6a",
+ "skillsDigest": "23c2942493bc31f647465b7b8be4c3ddcf6ee48b53e16113575285c82eb8d032",
+ "harnessDigest": "aa2df639e1f50ec40d76ed594b2eaf97a53b9ff9ad269d2c40bf1c20b0ffaf81",
  "reusedEvals": [
   "document-a-terraform-repo",
-  "document-a-ts-monorepo",
-  "drift-catches-a-new-edge",
-  "writes-a-case-for-changelog-line",
-  "adds-a-csv-to-table-skill"
+  "document-a-ts-monorepo"
  ]
 }

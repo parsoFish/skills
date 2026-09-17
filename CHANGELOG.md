@@ -3,6 +3,10 @@
 All notable changes to this repo. Conventional commits drive entries; one line per skill change.
 
 ## Unreleased
+
+## 0.2.1 — 2026-09-13
+- docs(architecture): `references/house-style.md` states it is the specification of record.
+- refactor(skill-dev): terse imperative body (81 lines) with the per-step rationale moved to `references/rationale.md`.
 - docs: record the 2026-09-13 policy decisions in CLAUDE.md (dormant optional CI job, accepted gate thresholds, exact tool pins).
 
 ## 0.2.0 — 2026-09-12

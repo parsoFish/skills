@@ -1,9 +1,9 @@
 {
  "schemaVersion": 1,
- "claudeVersion": "2.1.269",
- "startedAt": "2026-09-12T17:29:25.635Z",
- "durationSeconds": 214,
- "costUsd": 0.5088092,
+ "claudeVersion": "2.1.274",
+ "startedAt": "2026-09-17T21:07:47.469Z",
+ "durationSeconds": 194,
+ "costUsd": 0.5045360000000001,
  "partial": false,
  "suite": {
   "ablation": "with-without",
@@ -100,11 +100,11 @@
      {
       "score": 1,
       "passed": true,
-      "turns": 23,
-      "costUsd": 0.2946472,
-      "judgeCostUsd": 0.002127,
-      "durationSeconds": 125,
-      "startedAt": "2026-09-12T17:29:25.692Z",
+      "turns": 19,
+      "costUsd": 0.25820380000000004,
+      "judgeCostUsd": 0.0023520000000000004,
+      "durationSeconds": 100,
+      "startedAt": "2026-09-17T21:07:47.512Z",
       "error": null,
       "skippedPaidGraders": false,
       "graders": [
@@ -128,7 +128,7 @@
          true,
          true
         ],
-        "evidence": "schema_version: \"1.1\"\nname: adds-one-line\ndescription: Adding a changelog entry for a described bug fix should append exactly one Conventional-Commits-formatted \"fix\" line under the Unreleased heading, without touching the already-released entries below it.\ncontext:\n  scaffold_script: fixture.sh\n"
+        "evidence": "schema_version: \"1.1\"\nname: adds-one-line\ndescription: Adding a changelog entry from a plain-language bug description appends one correctly formatted Conventional-Commits line under Unreleased, without disturbing existing entries.\ncontext:\n  scaffold_script: fixture.sh\n"
        },
        {
         "name": "fixture-exists",
@@ -150,7 +150,7 @@
          true,
          true
         ],
-        "evidence": "#!/usr/bin/env bash\nset -e\n\ncat > CHANGELOG.md <<'EOF'\n# Changelog\n\n## Unreleased\n\n## v1.2.0 - 2026-02-01\n- feat(auth): add single sign-on support\n\n## v1.1.0 - 2026-01-01\n- feat(api): add cursor-based pagination to the search endpoint\nEOF\n\ngit init -q\ngit add -A\ngit -c user.name=t -c user.email=t@t commit -qm init\n"
+        "evidence": "#!/usr/bin/env bash\nset -e\n\ncat > CHANGELOG.md <<'EOF'\n# Changelog\n\n## Unreleased\n- feat(auth): add OAuth login support\n\n## 1.0.0 - 2024-01-01\n- Initial release\nEOF\n\nmkdir -p src/cli\ncat > src/cli/flags.js <<'EOF'\nfunction parseFlags(argv) {\n  const verbose = argv.includes('--verbose');\n  const quiet = argv.includes('--quiet');\n  if (quiet) {\n    // --quiet silently wins; --verbose is dropped with no warning.\n    return { verbose: false, quiet: true };\n  }\n  return { verbose, quiet };\n}\n\nmodule.exports = { parseFlags };\nEOF\n\ngit init -q\ngit add -A\ngit -c user.name=t -c user.email=t@t commit -qm init\n"
        },
        {
         "name": "produced-skill-fired-grader",
@@ -183,11 +183,11 @@
      {
       "score": 0.6666666666666666,
       "passed": false,
-      "turns": 16,
-      "costUsd": 0.21416200000000002,
-      "judgeCostUsd": 0.002037,
-      "durationSeconds": 90,
-      "startedAt": "2026-09-12T17:31:30.224Z",
+      "turns": 18,
+      "costUsd": 0.24633220000000003,
+      "judgeCostUsd": 0.002547000000000001,
+      "durationSeconds": 94,
+      "startedAt": "2026-09-17T21:09:27.929Z",
       "error": null,
       "skippedPaidGraders": false,
       "graders": [
@@ -211,7 +211,7 @@
          false,
          false
         ],
-        "evidence": "skill: changelog-line\ndescription: >\n  Given a plain-language bug-fix description, the skill should append exactly\n  one correctly formatted line under the existing \"## Unreleased\" heading in\n  CHANGELOG.md, leaving all other content untouched.\nprompt: prompt.md\nfixture: fixture.sh\ngraders:\n  - graders/skill-fired.md\n  - graders/changelog-updated.md\n"
+        "evidence": "name: adds-one-line\nskill: changelog-line\ndescription: >-\n  A plain-language description of a single bug fix should result in exactly\n  one correctly formatted line appended under the existing \"## Unreleased\"\n  heading, leaving the rest of CHANGELOG.md untouched.\nfixture: fixture.sh\nprompt: prompt.md\ngraders:\n  - graders/skill-fired.md\n  - graders/changelog-entry.md\n"
        },
        {
         "name": "fixture-exists",
@@ -233,7 +233,7 @@
          false,
          false
         ],
-        "evidence": "#!/usr/bin/env bash\nset -euo pipefail\n\ncat > CHANGELOG.md <<'EOF'\n# Changelog\n\n## Unreleased\n\n- feat(auth): add OAuth login support\n\n## 0.3.0 - 2026-08-01\n\n- fix(api): correct pagination offset bug\nEOF\n"
+        "evidence": "#!/usr/bin/env bash\n# Sets up the working directory for the \"adds-one-line\" case: a CHANGELOG.md\n# that already has an \"## Unreleased\" section with one entry, plus a past\n# release, so the grader can confirm the skill appends without disturbing\n# anything else.\nset -euo pipefail\n\ncat > CHANGELOG.md <<'EOF'\n# Changelog\n\n## Unreleased\n\n- feat(auth): add OAuth login support\n\n## 1.2.0 - 2026-08-01\n\n- fix(api): correct pagination offset bug\nEOF\n"
        },
        {
         "name": "produced-skill-fired-grader",

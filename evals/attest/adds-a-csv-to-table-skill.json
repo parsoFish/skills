@@ -1,9 +1,9 @@
 {
  "schemaVersion": 1,
- "claudeVersion": "2.1.269",
- "startedAt": "2026-09-12T17:33:01.839Z",
- "durationSeconds": 232,
- "costUsd": 0.6749372,
+ "claudeVersion": "2.1.274",
+ "startedAt": "2026-09-17T21:11:03.358Z",
+ "durationSeconds": 279,
+ "costUsd": 0.8226616000000002,
  "partial": false,
  "suite": {
   "ablation": "with-without",
@@ -109,11 +109,11 @@
      {
       "score": 1,
       "passed": true,
-      "turns": 21,
-      "costUsd": 0.397363,
-      "judgeCostUsd": 0.003770999999999999,
-      "durationSeconds": 123,
-      "startedAt": "2026-09-12T17:33:01.883Z",
+      "turns": 23,
+      "costUsd": 0.4639050000000001,
+      "judgeCostUsd": 0.004533,
+      "durationSeconds": 160,
+      "startedAt": "2026-09-17T21:11:03.399Z",
       "error": null,
       "skippedPaidGraders": false,
       "graders": [
@@ -161,7 +161,7 @@
          true,
          true
         ],
-        "evidence": "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { parseCsv, csvToMarkdownTable } from './convert.mjs';\n\ntest('parseCsv splits basic rows', () => {\n  assert.deepEqual(parseCsv('a,b,c\\n1,2,3'), [\n    ['a', 'b', 'c'],\n    ['1', '2', '3'],\n  ]);\n});\n\ntest('parseCsv handles quoted fields with commas and escaped quotes', () => {\n  assert.deepEqual(parseCsv('name,quote\\n\"Doe, Jane\",\"She said \"\"hi\"\"\"'), [\n    ['name', 'quote'],\n    ['Doe, Jane', 'She said \"hi\"'],\n  ]);\n});\n\ntest('csvToMarkdownTable renders a GitHub-flavored markdown table', () => {\n  const csv = 'name,age\\nAda,36\\nGrace,85';\n  const table = csvToMarkdownTable(csv);\n  assert.equal(\n    table,\n    ['| name | age |', '| --- | --- |', '| Ada | 36 |', '| Grace | 85 |'].join('\\n')\n  );\n});\n\ntest('csvToMarkdownTable escapes pipe characters in cells', () => {\n  const csv = 'a,b\\n1|2,3';\n  const table = csvToMarkdownTable(csv);\n  assert.equal(table, ['| a | b |', '| --- | --- |', '| 1\\\\|2 | 3 |'].join('\\n'));\n});\n\ntest('csvToMarkdownTable returns an empty string for empty input', () => {\n  assert.equal(csvToMarkdownTable(''), '');\n});\n"
+        "evidence": "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { parseCsv, csvToMarkdownTable } from './convert.mjs';\n\ntest('parses a simple csv into rows', () => {\n  const rows = parseCsv('name,age\\nAda,30\\nGrace,85\\n');\n  assert.deepEqual(rows, [\n    ['name', 'age'],\n    ['Ada', '30'],\n    ['Grace', '85'],\n  ]);\n});\n\ntest('parses quoted fields with embedded commas and escaped quotes', () => {\n  const rows = parseCsv('name,quote\\n\"Lovelace, Ada\",\"She said \"\"hi\"\"\"\\n');\n  assert.deepEqual(rows, [\n    ['name', 'quote'],\n    ['Lovelace, Ada', 'She said \"hi\"'],\n  ]);\n});\n\ntest('converts a simple csv to a github-flavored markdown table', () => {\n  const table = csvToMarkdownTable('name,age\\nAda,30\\nGrace,85\\n');\n  assert.equal(\n    table,\n    ['| name | age |', '| --- | --- |', '| Ada | 30 |', '| Grace | 85 |'].join('\\n'),\n  );\n});\n\ntest('escapes pipe characters in cells', () => {\n  const table = csvToMarkdownTable('a,b\\n1|2,3\\n');\n  assert.equal(table, ['| a | b |', '| --- | --- |', '| 1\\\\|2 | 3 |'].join('\\n'));\n});\n\ntest('collapses newlines inside quoted cells', () => {\n  const table = csvToMarkdownTable('a,b\\n\"line1\\nline2\",x\\n');\n  assert.equal(table, ['| a | b |', '| --- | --- |', '| line1 line2 | x |'].join('\\n'));\n});\n\ntest('throws when a row has a different column count than the header', () => {\n  assert.throws(() => csvToMarkdownTable('a,b\\n1,2,3\\n'), /column/);\n});\n\ntest('throws on an empty csv', () => {\n  assert.throws(() => csvToMarkdownTable(''), /no rows/);\n});\n"
        },
        {
         "name": "skill-fired",
@@ -191,7 +191,7 @@
          true,
          true
         ],
-        "evidence": "---\nname: csv-to-table\ndescription: Converts a CSV file into a GitHub-flavored markdown table. Use when the user asks to turn a CSV into a markdown table, render CSV data as a table, or wants CSV content pasted into a README, PR description, or doc as a table.\n---\n\n# CSV to table\n\nConvert a CSV file into a GitHub-flavored markdown table.\n\n## Steps\n\n1. Locate the input CSV file the user means (a path they gave, or the most recently discussed\n   CSV in the conversation).\n2. Run the converter:\n\n       node skills/csv-to-table/scripts/convert.mjs <path-to-csv>\n\n3. The script prints the markdown table to stdout. Write it to the destination the user asked\n   for, or include it directly in your reply if they didn't name one.\n\n## Notes\n\n- The first CSV row becomes the table header.\n- Quoted fields (`\"a, b\"`, `\"\"` for an escaped quote) are supported; embedded newlines inside a\n  quoted field are not.\n- Pipe characters in a cell are escaped (`\\|`) so they don't break the table's column syntax.\n"
+        "evidence": "---\nname: csv-to-table\ndescription: Converts a CSV file into a GitHub-flavored markdown table. Use when the user asks to convert a CSV to markdown, turn a CSV file into a table, render CSV data as a markdown table, or paste CSV data into a README or PR description as a table.\n---\n\n# CSV to table\n\nConvert a CSV file into a GitHub-flavored markdown table using the bundled script.\n\n## Steps\n\n1. Run the converter script against the CSV file:\n\n   ```\n   node skills/csv-to-table/scripts/convert.mjs <input.csv>\n   ```\n\n   This prints the markdown table to stdout. Pass a second argument to write the table to a\n   file instead:\n\n   ```\n   node skills/csv-to-table/scripts/convert.mjs <input.csv> <output.md>\n   ```\n\n2. The first row of the CSV becomes the table header. Every other row becomes a body row, in\n   the same order as the source file.\n3. Cells containing a literal `|` are escaped as `\\|` so the table renders correctly. Cells\n   containing newlines have them collapsed to a single space, since GFM table cells cannot\n   contain literal line breaks.\n4. If the CSV is empty, or a row has a different number of columns than the header, the script\n   raises an error rather than guessing. Report that error back to the user rather than padding\n   or truncating columns yourself.\n\n## When not to use\n\nSkip this skill for CSVs too large to reasonably display as a markdown table (many hundreds of\nrows). Summarize or filter the data down to the relevant rows first, then convert those.\n"
        }
       ]
      }
@@ -200,11 +200,11 @@
      {
       "score": 0.5714285714285714,
       "passed": false,
-      "turns": 14,
-      "costUsd": 0.27757420000000005,
-      "judgeCostUsd": 0.0038519999999999987,
-      "durationSeconds": 108,
-      "startedAt": "2026-09-12T17:35:05.012Z",
+      "turns": 16,
+      "costUsd": 0.35875660000000004,
+      "judgeCostUsd": 0.005021999999999998,
+      "durationSeconds": 119,
+      "startedAt": "2026-09-17T21:13:43.162Z",
       "error": null,
       "skippedPaidGraders": false,
       "graders": [
@@ -252,7 +252,7 @@
          true,
          true
         ],
-        "evidence": "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { csvToMarkdownTable, parseCsv } from './convert.mjs';\n\ntest('converts a simple csv into a markdown table', () => {\n  const csv = 'name,age\\nAda,36\\nGrace,85\\n';\n  const table = csvToMarkdownTable(csv);\n  assert.equal(\n    table,\n    ['| name | age |', '| --- | --- |', '| Ada | 36 |', '| Grace | 85 |'].join('\\n')\n  );\n});\n\ntest('handles quoted fields containing commas and doubled quotes', () => {\n  const csv = 'city,note\\n\"Springfield, IL\",\"Home of the \"\"Simpsons\"\"\"\\n';\n  const rows = parseCsv(csv);\n  assert.deepEqual(rows, [\n    ['city', 'note'],\n    ['Springfield, IL', 'Home of the \"Simpsons\"'],\n  ]);\n});\n\ntest('escapes pipe and backslash characters so the table does not break', () => {\n  const csv = 'a,b\\n1|2,c:\\\\d\\n';\n  const table = csvToMarkdownTable(csv);\n  const lines = table.split('\\n');\n  assert.equal(lines[2], '| 1\\\\|2 | c:\\\\\\\\d |');\n});\n\ntest('pads ragged rows to match the header width', () => {\n  const csv = 'a,b,c\\n1,2\\n3,4,5,6\\n';\n  const table = csvToMarkdownTable(csv);\n  const lines = table.split('\\n');\n  assert.equal(lines[2], '| 1 | 2 |  |');\n  assert.equal(lines[3], '| 3 | 4 | 5 |');\n});\n\ntest('returns an empty string for empty input', () => {\n  assert.equal(csvToMarkdownTable(''), '');\n});\n"
+        "evidence": "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { parseCSV, toMarkdownTable, csvToMarkdownTable } from './convert.mjs';\n\ntest('parseCSV splits simple rows', () => {\n  assert.deepEqual(parseCSV('a,b\\n1,2\\n'), [\n    ['a', 'b'],\n    ['1', '2'],\n  ]);\n});\n\ntest('parseCSV handles quoted fields with commas and escaped quotes', () => {\n  const input = 'name,quote\\n\"Doe, John\",\"She said \"\"hi\"\"\"\\n';\n  assert.deepEqual(parseCSV(input), [\n    ['name', 'quote'],\n    ['Doe, John', 'She said \"hi\"'],\n  ]);\n});\n\ntest('parseCSV handles newlines embedded in quoted fields', () => {\n  const input = 'a,b\\n\"line1\\nline2\",2\\n';\n  assert.deepEqual(parseCSV(input), [\n    ['a', 'b'],\n    ['line1\\nline2', '2'],\n  ]);\n});\n\ntest('parseCSV ignores a trailing blank line', () => {\n  assert.deepEqual(parseCSV('a,b\\n1,2\\n'), [\n    ['a', 'b'],\n    ['1', '2'],\n  ]);\n});\n\ntest('parseCSV returns an empty array for empty input', () => {\n  assert.deepEqual(parseCSV(''), []);\n});\n\ntest('toMarkdownTable renders header, separator, and body rows', () => {\n  const table = toMarkdownTable([\n    ['Name', 'Age'],\n    ['Ada', '36'],\n    ['Grace', '85'],\n  ]);\n  assert.equal(\n    table,\n    ['| Name | Age |', '| --- | --- |', '| Ada | 36 |', '| Grace | 85 |'].join('\\n'),\n  );\n});\n\ntest('toMarkdownTable escapes pipe characters in cells', () => {\n  const table = toMarkdownTable([['A|B'], ['1|2']]);\n  assert.equal(table, ['| A\\\\|B |', '| --- |', '| 1\\\\|2 |'].join('\\n'));\n});\n\ntest('toMarkdownTable turns embedded newlines into <br>', () => {\n  const table = toMarkdownTable([['Cell'], ['line1\\nline2']]);\n  assert.equal(table, ['| Cell |', '| --- |', '| line1<br>line2 |'].join('\\n'));\n});\n\ntest('toMarkdownTable pads ragged rows to the header width', () => {\n  const table = toMarkdownTable([\n    ['A', 'B', 'C'],\n    ['1'],\n  ]);\n  assert.equal(table, ['| A | B | C |', '| --- | --- | --- |', '| 1 |  |  |'].join('\\n'));\n});\n\ntest('toMarkdownTable returns an empty string for no rows', () => {\n  assert.equal(toMarkdownTable([]), '');\n});\n\ntest('csvToMarkdownTable converts CSV text end to end', () => {\n  const csv = 'Name,Role\\nAda,Engineer\\nGrace,Admiral\\n';\n  const table = csvToMarkdownTable(csv);\n  assert.equal(\n    table,\n    ['| Name | Role |', '| --- | --- |', '| Ada | Engineer |', '| Grace | Admiral |'].join('\\n'),\n  );\n});\n"
        },
        {
         "name": "skill-md-exists",
@@ -266,15 +266,15 @@
         "name": "skill-md-quality",
         "passed": false,
         "weight": 1,
-        "explanation": "judge votes: PASS FAIL FAIL",
+        "explanation": "judge votes: FAIL FAIL FAIL",
         "withOnly": false,
         "scored": true,
         "judgeVotes": [
-         true,
+         false,
          false,
          false
         ],
-        "evidence": "---\nname: csv-to-table\ndescription: Convert a CSV file into a GitHub-flavored markdown table. Use when the user asks to turn CSV data into a markdown table, paste CSV into a doc or README, or wants a quick markdown preview of tabular data.\n---\n\n# CSV to Table\n\nConverts CSV input into a GitHub-flavored markdown table.\n\n## Usage\n\nRun the conversion script with a path to a CSV file:\n\n    node skills/csv-to-table/scripts/convert.mjs path/to/data.csv\n\nThe script prints the markdown table to stdout. Redirect it to a file or paste it directly\ninto a markdown document.\n\n## Notes\n\n- The first row of the CSV is treated as the header row.\n- Fields containing `|`, `\\`, or newlines are escaped so the table renders correctly.\n- Quoted CSV fields (including embedded commas and doubled `\"\"` quotes) are supported.\n- Ragged rows are padded or truncated to match the header's column count.\n"
+        "evidence": "---\nname: csv-to-table\ndescription: Convert a CSV file into a GitHub-flavored markdown table. Use when the user asks to turn CSV data, a .csv file, or comma-separated values into a markdown table for Markdown/GitHub rendering.\n---\n\n# CSV to Table\n\nConvert CSV input into a GitHub-flavored markdown table.\n\n## Usage\n\nRun the conversion script against a CSV file:\n\n    node skills/csv-to-table/scripts/convert.mjs <path-to-file.csv>\n\nThe script prints a GitHub-flavored markdown table to stdout: the first CSV row\nbecomes the header row, followed by a `---` separator row, then one row per\nremaining record.\n\n## Notes\n\n- Quoted fields are supported, including embedded commas, quotes (`\"\"`), and\n  newlines.\n- Cell content is escaped for markdown: `|` becomes `\\|` and newlines become\n  `<br>`, so embedded characters don't break the table.\n- Ragged rows are padded or truncated to match the header's column count.\n"
        }
       ]
      }
