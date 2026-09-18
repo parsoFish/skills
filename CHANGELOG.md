@@ -5,13 +5,13 @@ All notable changes to this repo. Conventional commits drive entries; one line p
 ## Unreleased
 
 ## 0.2.3 — 2026-09-18
+- fix(architecture): the stage-2 brief's required-views section leads with `overview.md` for every kind; stage 2 writes only what that section lists, so the overview was written by habit, and two of three runs on identical content skipped it.
 - fix(gate): a raw eval result is stamped with the digest of the skill content it ran against and reused only for that content; a failed result forces a fresh run instead of being reused.
 - fix(gate): eval reuse reads the last attested report from `HEAD` when a quick gate has overwritten the working-tree copy, so `gate:quick` before a full run no longer re-buys every case.
 - feat(gate): `--reuse-evals` reuses a case whenever its own skill's content digest matches the last attested report, so a squash merge or an unrelated skill change no longer re-buys it.
 - fix(evals): the two process-skill cases drop every file-existence grader whose path the prompt dictates (they passed in both arms and had squeezed the delta to 0.29), run twice per arm, and the SKILL.md rubric names a checkable body shape.
 - fix(skill-dev): step 3 states the body's shape as a recipe (purpose line, verb-first numbered steps, When not to use, references links) instead of a prohibition; rationale is linked, not just named.
 - fix(eval-authoring): names the third grader trap (a path the prompt itself dictates), tells authors to set `runs: 2` for judge-scored cases, and uses imperative section headings.
-- feat(gate): `--reuse-evals` reuses a case whenever its own skill's content digest matches the last attested report, so a squash merge or an unrelated skill change no longer re-buys it.
 
 ## 0.2.2 — 2026-09-17
 - fix(architecture): the deps extractor scans `.jsx`, `.cjs`, `.mts` and `.cts` files and recognises side-effect and dynamic `import()` specifiers, so `react-dom/client` in a `.jsx` file and a lazily-loaded package no longer read as unused (#4, #14).

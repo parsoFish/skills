@@ -137,11 +137,14 @@ function completenessSection({ completeness }) {
 }
 
 function checklistSection({ kinds }) {
-  const rows = requiredViews(kinds.kinds ?? []).filter(r => r.required === '✓').map(({ view }) => {
+  // overview.md is not a CHECKLIST view but the one written document the house style requires of
+  // every archetype; listing it here is what makes stage 2 write it (stage 2 writes only what §5 lists).
+  const overview = ['overview', 'architecture/overview.md', 'prose: what the system is, its parts and how they talk, in the operator\'s words; every claim evidenced by a reference/ file or marked GAP'];
+  const rows = [overview, ...requiredViews(kinds.kinds ?? []).filter(r => r.required === '✓').map(({ view }) => {
     const s = viewShape(view);
     const shape = [s.needsFence ? 'diagram fence' : null, s.needsTableColumns.length ? `columns: ${s.needsTableColumns.join(', ')}` : null].filter(Boolean).join('; ') || 'prose';
     return [view, s.file ?? '(none)', shape];
-  });
+  })];
   return ['## 5. Required views for this shape', '', table(['view', 'where', 'content shape'], rows)].join('\n');
 }
 
