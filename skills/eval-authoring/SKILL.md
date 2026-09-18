@@ -42,12 +42,10 @@ result whether the skill actually engaged, separate from whether the outcome was
 
 ## 4. Add at least one scored outcome grader
 
-Because the indicator above scores nothing, a case that contains *only* that grader has a delta
-that is structurally zero — there is nothing left for the with-arm and the without-arm to differ
-on numerically. Add at least one grader that checks a produced file exists, matches a pattern
-against real content, or is judged by a rubric against real content. This is the single most
-common mistake in a first-draft case: a case that "passes" on nothing but the fire-indicator has
-validated that the skill fired, not that it helped.
+Add at least one grader that scores what the run produced: a file that exists only if the skill's
+convention was followed, a pattern matched against real content, or a rubric judged against real
+content. The fire indicator scores nothing, so a case with only that grader has a delta that is
+structurally zero and proves the skill fired, not that it helped.
 
 ## 5. Point file-reading graders at a file, explicitly
 
@@ -59,7 +57,7 @@ and then writing a rubric or pattern that talks about a file's contents is a cas
 fails on whatever the model happened to say in its final reply, which is rarely the same thing as
 what it actually wrote to disk.
 
-## 6. Two traps that make a grader pass for the wrong reason
+## 6. Avoid the three graders that pass for the wrong reason
 
 - **A pattern whose text already appears in the prompt.** If the prompt asks "tell me whether it
   drifted" and the grader's pattern matches the word "drift", the without-skill arm passes by
@@ -69,12 +67,18 @@ what it actually wrote to disk.
 - **A file-existence check on a path the fixture already created.** This kind of grader only
   proves something when the path is expected to be produced *during the run*. If `fixture.sh`
   already wrote that file, the grader passes even if the model does nothing at all.
+- **A file-existence check on a path the prompt itself dictates.** If the prompt says "put the
+  test at `scripts/x.test.mjs`", any competent agent creates it with or without the skill; the
+  grader passes in both arms and only shrinks the delta towards the gate's floor. Keep existence
+  checks for paths the skill's *convention* supplies, and let content graders do the scoring.
 
 ## 7. Run the case and compare the arms
 
 Run the single case in isolation and read both arms: the with-skill score, the without-skill
 score, and the delta. A high with-skill score next to an equally high without-skill score means
-the task didn't need the skill — narrow the fixture or the prompt until it does. If a case grants
+the task didn't need the skill — narrow the fixture or the prompt until it does. Set `runs: 2` or
+more in `prompt.md` for any case whose scoring leans on an LLM judge; a single run's judge vote
+is one sample, and one flipped vote can drop the delta below the gate's floor. If a case grants
 shell access (its `allowed_tools` includes `Bash`), every run on it needs the evaluation harness
 to have a working sandbox backend available to confine that shell; without one, every run on that
 case errors out before the first turn, which looks like a skill failure but is actually a harness
@@ -91,5 +95,5 @@ one — check the harness's own error message before concluding the skill is at 
 - [ ] Every grader that judges a file sets an explicit file target; none rely on the
       last-message default to judge file content.
 - [ ] No pattern-based grader's pattern is a substring of the prompt it's paired with.
-- [ ] File-existence graders only name paths the run is expected to create, never paths the
-      fixture already wrote.
+- [ ] File-existence graders only name paths the run is expected to create because the skill
+      taught the convention, never paths the fixture already wrote or the prompt spelled out.

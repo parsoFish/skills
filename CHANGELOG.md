@@ -3,6 +3,11 @@
 All notable changes to this repo. Conventional commits drive entries; one line per skill change.
 
 ## Unreleased
+
+## 0.2.3 — 2026-09-18
+- fix(evals): the two process-skill cases drop every file-existence grader whose path the prompt dictates (they passed in both arms and had squeezed the delta to 0.29), run twice per arm, and the SKILL.md rubric names a checkable body shape.
+- fix(skill-dev): step 3 states the body's shape as a recipe (purpose line, verb-first numbered steps, When not to use, references links) instead of a prohibition; rationale is linked, not just named.
+- fix(eval-authoring): names the third grader trap (a path the prompt itself dictates), tells authors to set `runs: 2` for judge-scored cases, and uses imperative section headings.
 - feat(gate): `--reuse-evals` reuses a case whenever its own skill's content digest matches the last attested report, so a squash merge or an unrelated skill change no longer re-buys it.
 
 ## 0.2.2 — 2026-09-17
