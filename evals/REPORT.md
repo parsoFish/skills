@@ -3,13 +3,13 @@
 
 | field | value |
 | --- | --- |
-| skillsDigest | `0f70ddebfd2e` |
-| commit | `ed79f993e05b05a990bf4b3d40c4e07f085d76ab` |
-| generatedAt | 2026-09-18T00:01:02.491Z |
+| skillsDigest | `d11a8a556e55` |
+| commit | `941d5fa880703e14694bc9247e9f990269e0ab88` |
+| generatedAt | 2026-09-18T01:44:13.577Z |
 | claudeVersion | 2.1.275 |
-| pluginVersion | 0.2.2 |
-| total cost | $7.61 |
-| total duration | 40.6 min |
+| pluginVersion | 0.2.3 |
+| total cost | $8.74 |
+| total duration | 44.9 min |
 
 ## Deterministic steps
 
@@ -29,11 +29,11 @@
 
 | case | Δ | score | without | turns | cost | duration | verdict |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| document-a-terraform-repo | 1 | 1 | 0 | 69 | $1.94 | 13.0 min | PASS |
-| document-a-ts-monorepo | 1 | 1 | 0 | 130 | $3.28 | 17.7 min | PASS |
-| drift-catches-a-new-edge | 1 | 1 | 0 | 14 | $0.36 | 1.8 min | PASS |
-| writes-a-case-for-changelog-line | 0.33333333333333337 | 1 | 0.6666666666666666 | 19 | $0.50 | 3.2 min | PASS |
-| adds-a-csv-to-table-skill | 0.2857142857142857 | 0.8571428571428571 | 0.5714285714285714 | 32 | $0.96 | 4.8 min | PASS |
+| document-a-terraform-repo | 1 | 1 | 0 | 90 | $1.86 | 10.5 min | PASS |
+| document-a-ts-monorepo | 1 | 1 | 0 | 95 | $2.50 | 13.4 min | PASS |
+| drift-catches-a-new-edge | 1 | 1 | 0 | 18 | $0.44 | 2.1 min | PASS |
+| writes-a-case-for-changelog-line | 1 | 1 | 0 | 23 | $1.21 | 7.0 min | PASS |
+| adds-a-csv-to-table-skill | 0.625 | 0.875 | 0.25 | 31 | $1.86 | 12.0 min | PASS |
 
 ## Graders
 
@@ -69,12 +69,8 @@
 
 | grader | type | with | without | explanation |
 | --- | --- | --- | --- | --- |
-| case-yaml-exists | file_exists | pass | pass | evals/changelog-line/adds-one-line/case.yaml exists as expected |
 | case-yaml-shape | llm | pass | fail | judge votes: PASS PASS PASS |
-| fixture-exists | file_exists | pass | pass | evals/changelog-line/adds-one-line/fixture.sh exists as expected |
 | fixture-shape | llm | pass | fail | judge votes: PASS PASS PASS |
-| produced-skill-fired-grader | file_exists | pass | pass | evals/changelog-line/adds-one-line/graders/skill-fired.md exists as expected |
-| prompt-exists | file_exists | pass | pass | evals/changelog-line/adds-one-line/prompt.md exists as expected |
 | skill-fired | tool_used | pass | — | Skill called 1x (expected 1..∞) |
 
 ### adds-a-csv-to-table-skill
@@ -82,21 +78,18 @@
 | grader | type | with | without | explanation |
 | --- | --- | --- | --- | --- |
 | eval-case-fixture-exists | file_exists | pass | fail | evals/csv-to-table/converts-a-simple-csv/fixture.sh exists as expected |
-| eval-case-skill-grader-exists | file_exists | pass | pass | evals/csv-to-table/converts-a-simple-csv/graders/skill-fired.md exists as expected |
 | eval-case-yaml-exists | file_exists | pass | fail | evals/csv-to-table/converts-a-simple-csv/case.yaml exists as expected |
-| script-test-exists | file_exists | pass | pass | skills/csv-to-table/scripts/convert.test.mjs exists as expected |
 | script-test-quality | llm | pass | pass | judge votes: PASS PASS PASS |
-| skill-fired | tool_used | pass | — | Skill called 1x (expected 1..∞) |
-| skill-md-exists | file_exists | pass | pass | skills/csv-to-table/SKILL.md exists as expected |
+| skill-fired | tool_used | pass | — | Skill called 2x (expected 1..∞) |
 | skill-md-quality | llm | fail | fail | judge votes: FAIL FAIL FAIL |
 
 ## Structural review
 
 | skill | verdict | findings | cost |
 | --- | --- | --- | --- |
-| architecture | pass | none | $0.36 |
-| eval-authoring | pass | none | $0.10 |
-| skill-dev | pass | none | $0.10 |
+| architecture | pass | none | $0.60 |
+| eval-authoring | pass | none | $0.19 |
+| skill-dev | pass | none | $0.09 |
 
 ## Re-run
 
@@ -115,9 +108,9 @@ setsid nohup node scripts/gate.mjs --all --force > /tmp/gate.log 2>&1 &
 ## Recent ledger
 
 ```
-| 2026-09-17 | 754e010 | architecture+eval-authoring+skill-dev | 5 cases | $7.03 | 38.9 min | sonnet-5/haiku-4-5 | PASS (reused 2 eval results) |
 | 2026-09-17 | a4e229e | architecture+eval-authoring+skill-dev | 5 cases | $6.89 | 38.9 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |
 | 2026-09-17 | 0997a56 | architecture+eval-authoring+skill-dev | 5 cases | $7.00 | 38.9 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |
 | 2026-09-17 | 5bedb98 | architecture+eval-authoring+skill-dev | 5 cases | $7.58 | 40.6 min | sonnet-5/haiku-4-5 | PASS (reused 1 eval result) |
 | 2026-09-18 | ed79f99 | architecture+eval-authoring+skill-dev | 5 cases | $7.61 | 40.6 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |
+| 2026-09-18 | 941d5fa | architecture+eval-authoring+skill-dev | 5 cases | $8.74 | 44.9 min | sonnet-5/haiku-4-5 | PASS (reused 1 eval result) |
 ```
