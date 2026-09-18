@@ -3,6 +3,7 @@
 All notable changes to this repo. Conventional commits drive entries; one line per skill change.
 
 ## Unreleased
+- fix(gate): a raw eval result is stamped with the digest of the skill content it ran against and reused only for that content; a failed result forces a fresh run instead of being reused.
 - fix(gate): eval reuse reads the last attested report from `HEAD` when a quick gate has overwritten the working-tree copy, so `gate:quick` before a full run no longer re-buys every case.
 - feat(gate): `--reuse-evals` reuses a case whenever its own skill's content digest matches the last attested report, so a squash merge or an unrelated skill change no longer re-buys it.
 

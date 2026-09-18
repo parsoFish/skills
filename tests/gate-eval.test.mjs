@@ -181,3 +181,19 @@ test('loadPriorReport prefers the working-tree report only when it is attested; 
   assert.equal(pick(null, null), null);
   assert.equal(pick('not json', attested).attested, true, 'an unparseable tree copy is skipped');
 });
+
+test('canReuseEval: a raw result stamped with the skill digest that produced it is reusable only for that same digest, whatever the commit times say', () => {
+  const t = 1_700_000_000;
+  const at = epoch => new Date(epoch * 1000).toISOString();
+  assert.equal(canReuseEval({ startedAt: at(t - 60), gateSkillDigest: 'd1' }, t, { skillDigestNow: 'd1' }), true, 'same content: time is irrelevant');
+  assert.equal(canReuseEval({ startedAt: at(t + 60), gateSkillDigest: 'd1' }, t, { skillDigestNow: 'd2' }), false, 'other content: never, even if fresh');
+  assert.equal(canReuseEval({ startedAt: at(t + 60) }, t, { skillDigestNow: 'd2' }), true, 'unstamped legacy result: the time rule still applies');
+});
+
+test('candidateVerdict: a failed candidate is never reused, it forces a fresh run', async () => {
+  const { candidateVerdict } = await import('../scripts/gate/agentic.mjs');
+  assert.equal(candidateVerdict({ ok: true, partial: false }, ''), 'reuse');
+  assert.equal(candidateVerdict({ ok: false, partial: false }, ''), 'rerun');
+  assert.equal(candidateVerdict({ ok: true, partial: true }, ''), 'next');
+  assert.equal(candidateVerdict({ ok: true, partial: false }, 'no sandbox'), 'next');
+});

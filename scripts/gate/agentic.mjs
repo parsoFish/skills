@@ -3,7 +3,7 @@
 // Depends on scripts/attest.mjs (digests, dirtyPaths, copyEvidence) and scripts/report.mjs
 // (writeReport) — both owned by another stream, imported dynamically so the gate's other paths
 // (deterministic, --no-agentic, --verify-only) still run before those land.
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { caseNames, readEvalResult, aggregateEvals, harnessProblem, sandboxEnv, canReuseEval, versionDrift } from './eval.mjs';
 import { spawnSync } from 'node:child_process';
@@ -64,6 +64,14 @@ export function attestedForSameSkillContent(prior, skill, skillDigestNow, caseNa
   return (prior.eval?.cases ?? []).some(k => k.name === caseName && k.skill === skill && k.evidence);
 }
 
+/** Pure: what to do with a reuse candidate once read. A harness failure or an interrupted run is not
+ * evidence (try the next candidate); a complete FAILED result is evidence that must not be quietly
+ * skipped in favour of an older pass, so the case is re-run for a fresh verdict; a pass is reused. */
+export function candidateVerdict(ev, harness) {
+  if (harness || ev.partial) return 'next';
+  return ev.ok ? 'reuse' : 'rerun';
+}
+
 function runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEvals, priorReport, skillsDigestNow, skillDigestsNow = {} }) {
   const jsonPath = join(root, 'evals', `gate-eval-${c.name}.json`);
   const reportHtml = join(root, 'evals', 'results', `${c.name}.html`);
@@ -76,11 +84,13 @@ function runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEval
         const j = JSON.parse(readFileSync(candidate, 'utf8'));
         // Either the result post-dates the last change to the skill, or the prior attestation covers
         // this case for byte-identical skill content (a squash merge moves commit times, not content).
-        if (!canReuseEval(j, lastChangeEpoch(root, c.skill))
+        if (!canReuseEval(j, lastChangeEpoch(root, c.skill), { skillDigestNow: skillDigestsNow[c.skill] })
           && !attestedForSameContent(priorReport, skillsDigestNow, c.name)
           && !attestedForSameSkillContent(priorReport, c.skill, skillDigestsNow[c.skill], c.name)) continue;
         const ev = readEvalResult(j, config);
-        if (harnessProblem(j) || ev.partial) continue; // an interrupted run is not evidence; try the next candidate
+        const verdict = candidateVerdict(ev, harnessProblem(j));
+        if (verdict === 'next') continue;
+        if (verdict === 'rerun') { console.log(`     ${c.name}: the latest result for this content failed (score ${ev.score}, Δ${ev.delta}) — re-running instead of reusing it`); break; }
         return { result: { ...c, exit: 0, model: evalModel, judge: judgeModel, jsonPath: candidate, reused: true, ...ev }, harness: '' };
       } catch { /* try the next candidate, then a real run */ }
     }
@@ -97,6 +107,8 @@ function runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEval
     const j = JSON.parse(readFileSync(jsonPath, 'utf8'));
     ev = readEvalResult(j, config);
     harness = harnessProblem(j);
+    // stamp the content this result was produced against, so reuse is keyed on content, not time
+    if (skillDigestsNow[c.skill]) writeFileSync(jsonPath, JSON.stringify({ ...j, gateSkillDigest: skillDigestsNow[c.skill] }, null, 1) + '\n');
   } catch (err) {
     ev = { ...ev, errors: [...ev.errors, `could not read ${jsonPath}: ${err.message}`] };
   }
