@@ -4,9 +4,9 @@
  "attested": true,
  "agenticRan": true,
  "bypass": null,
- "generatedAt": "2026-09-17T22:19:46.937Z",
- "commit": "5bedb9898315c0cd2615d45ae06b0b0c1c8b5d56",
- "claudeVersion": "2.1.274",
+ "generatedAt": "2026-09-18T00:01:02.491Z",
+ "commit": "ed79f993e05b05a990bf4b3d40c4e07f085d76ab",
+ "claudeVersion": "2.1.275",
  "pluginVersion": "0.2.2",
  "scope": {
   "skills": [
@@ -158,31 +158,35 @@
   "architecture": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.2774934
+   "costUsd": 0.35883360000000003
   },
   "eval-authoring": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.129638
+   "costUsd": 0.10074820000000001
   },
   "skill-dev": {
    "verdict": "pass",
-   "findings": [
-    {
-     "severity": "minor",
-     "finding": "SKILL.md references `references/rationale.md` only as backticked plain text (line 10), not as a markdown link, unlike every other skill in the repo (architecture, eval-authoring all use `[references/x.md](references/x.md)` links). Not a dead link since there's no link syntax to break, but it's inconsistent with the repo's progressive-disclosure linking convention and slightly hurts navigability."
-    }
-   ],
-   "costUsd": 0.1181606
+   "findings": [],
+   "costUsd": 0.09628439999999999
   }
  },
  "totals": {
-  "costUsd": 7.5780748,
+  "costUsd": 7.608649,
   "durationSeconds": 2437
  },
  "skillsDigest": "0f70ddebfd2ee39031ab1bc58c1df5ac115603fcd6ff1e48fc3e52607544fda5",
- "harnessDigest": "3bfefe2eea002f86ca2fcbfc58482ffda2ff3d453ae2616a9cf3bcd8b2fe9f43",
+ "harnessDigest": "b735e8bf0970c46ad163f2d625063d58156540faf6b42010013e0ecc010dafce",
  "reusedEvals": [
-  "writes-a-case-for-changelog-line"
- ]
+  "document-a-terraform-repo",
+  "document-a-ts-monorepo",
+  "drift-catches-a-new-edge",
+  "writes-a-case-for-changelog-line",
+  "adds-a-csv-to-table-skill"
+ ],
+ "skillDigests": {
+  "architecture": "428f7205c0f44507771ea04cff21cff1ff39661be82a9a70f7c845d1ee5471e7",
+  "eval-authoring": "3f008f6f358b6d781f8f12c186e9f7572534fa23822cc304605af4eafb0ddf50",
+  "skill-dev": "3f4045f24a2796b99fdc7ccd76ed9bd2a65d42026002e7ba3fd203b9cc62d517"
+ }
 }

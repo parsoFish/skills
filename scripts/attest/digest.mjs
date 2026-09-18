@@ -32,6 +32,12 @@ export function skillsDigest(root) {
   return digestLines(lsFiles(root, ['skills', 'evals']).filter(e => !isCircularEvalsPath(e.path)));
 }
 
+/** sha256 over the same shape for ONE skill: skills/<name> plus evals/<name>, excluding attestation
+ * outputs. Lets a passing eval result be reused while other skills change around it. */
+export function skillDigest(root, skill) {
+  return digestLines(lsFiles(root, [`skills/${skill}`, `evals/${skill}`]).filter(e => !isCircularEvalsPath(e.path)));
+}
+
 /** sha256 over the same shape for the harness that judges skills: every scripts/**\/*.mjs (never a
  * *.test.mjs) plus the three config files whose values the gate trusts. */
 export function harnessDigest(root) {

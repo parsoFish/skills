@@ -9,3 +9,4 @@
 | 2026-09-17 | a4e229e | architecture+eval-authoring+skill-dev | 5 cases | $6.89 | 38.9 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |
 | 2026-09-17 | 0997a56 | architecture+eval-authoring+skill-dev | 5 cases | $7.00 | 38.9 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |
 | 2026-09-17 | 5bedb98 | architecture+eval-authoring+skill-dev | 5 cases | $7.58 | 40.6 min | sonnet-5/haiku-4-5 | PASS (reused 1 eval result) |
+| 2026-09-18 | ed79f99 | architecture+eval-authoring+skill-dev | 5 cases | $7.61 | 40.6 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |

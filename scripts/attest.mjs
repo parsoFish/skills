@@ -8,7 +8,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { skillsDigest, harnessDigest, dirtyPaths } from './attest/digest.mjs';
+import { skillsDigest, harnessDigest, dirtyPaths, skillDigest } from './attest/digest.mjs';
 import { copyEvidence } from './attest/evidence.mjs';
 import { loadConfig } from './attest/config.mjs';
 import { diffNameOnly, changedSkillNames } from './attest/git.mjs';
@@ -16,7 +16,7 @@ import { checkAttestationFlags, checkDigests, checkAncestor, checkSkillCoverage,
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-export { skillsDigest, harnessDigest, dirtyPaths, copyEvidence };
+export { skillDigest, skillsDigest, harnessDigest, dirtyPaths, copyEvidence };
 
 function readReport(root) {
   const path = join(root, 'evals', 'gate-report.json');
