@@ -3,7 +3,7 @@
 // Depends on scripts/attest.mjs (digests, dirtyPaths, copyEvidence) and scripts/report.mjs
 // (writeReport) — both owned by another stream, imported dynamically so the gate's other paths
 // (deterministic, --no-agentic, --verify-only) still run before those land.
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { caseNames, readEvalResult, aggregateEvals, harnessProblem, sandboxEnv, canReuseEval, versionDrift } from './eval.mjs';
 import { spawnSync } from 'node:child_process';
@@ -41,12 +41,35 @@ export function attestedForSameContent(prior, skillsDigestNow, caseName) {
   return (prior.eval?.cases ?? []).some(k => k.name === caseName && k.evidence);
 }
 
+/** The last attested report to reuse evidence from. A quick gate (`--no-agentic`) rewrites the
+ * working-tree report as an unattested one, which used to erase every reuse candidate; so an
+ * unattested or unreadable tree copy defers to the committed copy at HEAD when that one is better. */
+export function loadPriorReport(root, {
+  readTree = () => { const p = join(root, 'evals', 'gate-report.json'); return existsSync(p) ? readFileSync(p, 'utf8') : null; },
+  readHead = () => { const r = spawnSync('git', ['show', 'HEAD:evals/gate-report.json'], { cwd: root, encoding: 'utf8', maxBuffer: 1 << 26 }); return r.status === 0 ? r.stdout : null; },
+} = {}) {
+  const parse = text => { if (text == null) return null; try { const j = JSON.parse(text); return j && typeof j === 'object' ? j : null; } catch { return null; } };
+  const tree = parse(readTree());
+  if (tree?.schema === 2 && tree.attested === true) return tree;
+  const head = parse(readHead());
+  if (head?.schema === 2 && head.attested === true) return head;
+  return tree ?? head ?? null;
+}
+
 /** Pure: the prior attested report covers this case for the exact content of ITS skill now in the tree,
  * regardless of what changed in other skills or of squash-merge commit times. */
 export function attestedForSameSkillContent(prior, skill, skillDigestNow, caseName) {
   if (!prior || prior.schema !== 2 || prior.attested !== true || !skillDigestNow) return false;
   if (!prior.skillDigests || prior.skillDigests[skill] !== skillDigestNow) return false;
   return (prior.eval?.cases ?? []).some(k => k.name === caseName && k.skill === skill && k.evidence);
+}
+
+/** Pure: what to do with a reuse candidate once read. A harness failure or an interrupted run is not
+ * evidence (try the next candidate); a complete FAILED result is evidence that must not be quietly
+ * skipped in favour of an older pass, so the case is re-run for a fresh verdict; a pass is reused. */
+export function candidateVerdict(ev, harness) {
+  if (harness || ev.partial) return 'next';
+  return ev.ok ? 'reuse' : 'rerun';
 }
 
 function runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEvals, priorReport, skillsDigestNow, skillDigestsNow = {} }) {
@@ -61,11 +84,13 @@ function runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEval
         const j = JSON.parse(readFileSync(candidate, 'utf8'));
         // Either the result post-dates the last change to the skill, or the prior attestation covers
         // this case for byte-identical skill content (a squash merge moves commit times, not content).
-        if (!canReuseEval(j, lastChangeEpoch(root, c.skill))
+        if (!canReuseEval(j, lastChangeEpoch(root, c.skill), { skillDigestNow: skillDigestsNow[c.skill] })
           && !attestedForSameContent(priorReport, skillsDigestNow, c.name)
           && !attestedForSameSkillContent(priorReport, c.skill, skillDigestsNow[c.skill], c.name)) continue;
         const ev = readEvalResult(j, config);
-        if (harnessProblem(j) || ev.partial) continue; // an interrupted run is not evidence; try the next candidate
+        const verdict = candidateVerdict(ev, harnessProblem(j));
+        if (verdict === 'next') continue;
+        if (verdict === 'rerun') { console.log(`     ${c.name}: the latest result for this content failed (score ${ev.score}, Δ${ev.delta}) — re-running instead of reusing it`); break; }
         return { result: { ...c, exit: 0, model: evalModel, judge: judgeModel, jsonPath: candidate, reused: true, ...ev }, harness: '' };
       } catch { /* try the next candidate, then a real run */ }
     }
@@ -82,6 +107,8 @@ function runOneCase(root, c, { evalModel, judgeModel, cap, config, sh, reuseEval
     const j = JSON.parse(readFileSync(jsonPath, 'utf8'));
     ev = readEvalResult(j, config);
     harness = harnessProblem(j);
+    // stamp the content this result was produced against, so reuse is keyed on content, not time
+    if (skillDigestsNow[c.skill]) writeFileSync(jsonPath, JSON.stringify({ ...j, gateSkillDigest: skillDigestsNow[c.skill] }, null, 1) + '\n');
   } catch (err) {
     ev = { ...ev, errors: [...ev.errors, `could not read ${jsonPath}: ${err.message}`] };
   }
@@ -94,8 +121,7 @@ export async function runAgentic({ root, scope, config, args, det, sh, commit, c
   const harnessDigestNow = attest.harnessDigest(root);
   const skillDigestsNow = Object.fromEntries(scope.skills.map(s => [s, attest.skillDigest(root, s)]));
 
-  const priorPath = join(root, 'evals', 'gate-report.json');
-  const prior = existsSync(priorPath) ? JSON.parse(readFileSync(priorPath, 'utf8')) : null;
+  const prior = loadPriorReport(root);
   const cacheHit = !args.force && prior?.schema === 2 && prior.attested === true && prior.skillsDigest === skillsDigestNow && prior.harnessDigest === harnessDigestNow;
   if (cacheHit) {
     console.log(`ok  claude plugin eval — cached pass for identical content (skillsDigest ${skillsDigestNow.slice(0, 12)})`);

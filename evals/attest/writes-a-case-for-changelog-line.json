@@ -1,9 +1,9 @@
 {
  "schemaVersion": 1,
- "claudeVersion": "2.1.274",
- "startedAt": "2026-09-17T21:07:47.469Z",
- "durationSeconds": 194,
- "costUsd": 0.5045360000000001,
+ "claudeVersion": "2.1.275",
+ "startedAt": "2026-09-18T00:30:28.769Z",
+ "durationSeconds": 417,
+ "costUsd": 1.207515,
  "partial": false,
  "suite": {
   "ablation": "with-without",
@@ -20,19 +20,10 @@
    "dir": "evals/eval-authoring/writes-a-case-for-changelog-line",
    "source": "mixed",
    "promptMarkdown": "This repository has a skill at skills/changelog-line/SKILL.md but no eval case for it yet. Write\none eval case for it at evals/changelog-line/adds-one-line/, following this repository's case\nformat: prompt.md, case.yaml, fixture.sh, and graders/skill-fired.md as the tool-use indicator,\nplus at least one more grader file that scores the actual outcome. Do not run any network or paid\ncommand — just author the case files.",
-   "runsPerCase": 1,
+   "runsPerCase": 2,
    "timeoutSeconds": 900,
    "maxTurns": 60,
    "graders": [
-    {
-     "name": "case-yaml-exists",
-     "type": "file_exists",
-     "weight": 1,
-     "config": {
-      "path": "evals/changelog-line/adds-one-line/case.yaml",
-      "exists": true
-     }
-    },
     {
      "name": "case-yaml-shape",
      "type": "llm",
@@ -44,15 +35,6 @@
        "source": "file",
        "path": "evals/changelog-line/adds-one-line/case.yaml"
       }
-     }
-    },
-    {
-     "name": "fixture-exists",
-     "type": "file_exists",
-     "weight": 1,
-     "config": {
-      "path": "evals/changelog-line/adds-one-line/fixture.sh",
-      "exists": true
      }
     },
     {
@@ -69,24 +51,6 @@
      }
     },
     {
-     "name": "produced-skill-fired-grader",
-     "type": "file_exists",
-     "weight": 1,
-     "config": {
-      "path": "evals/changelog-line/adds-one-line/graders/skill-fired.md",
-      "exists": true
-     }
-    },
-    {
-     "name": "prompt-exists",
-     "type": "file_exists",
-     "weight": 1,
-     "config": {
-      "path": "evals/changelog-line/adds-one-line/prompt.md",
-      "exists": true
-     }
-    },
-    {
      "name": "skill-fired",
      "type": "tool_used",
      "weight": 1,
@@ -100,22 +64,14 @@
      {
       "score": 1,
       "passed": true,
-      "turns": 19,
-      "costUsd": 0.25820380000000004,
-      "judgeCostUsd": 0.0023520000000000004,
-      "durationSeconds": 100,
-      "startedAt": "2026-09-17T21:07:47.512Z",
+      "turns": 23,
+      "costUsd": 0.31474139999999995,
+      "judgeCostUsd": 0.002187,
+      "durationSeconds": 127,
+      "startedAt": "2026-09-18T00:30:28.845Z",
       "error": null,
       "skippedPaidGraders": false,
       "graders": [
-       {
-        "name": "case-yaml-exists",
-        "passed": true,
-        "weight": 1,
-        "explanation": "evals/changelog-line/adds-one-line/case.yaml exists as expected",
-        "withOnly": false,
-        "scored": true
-       },
        {
         "name": "case-yaml-shape",
         "passed": true,
@@ -128,15 +84,7 @@
          true,
          true
         ],
-        "evidence": "schema_version: \"1.1\"\nname: adds-one-line\ndescription: Adding a changelog entry from a plain-language bug description appends one correctly formatted Conventional-Commits line under Unreleased, without disturbing existing entries.\ncontext:\n  scaffold_script: fixture.sh\n"
-       },
-       {
-        "name": "fixture-exists",
-        "passed": true,
-        "weight": 1,
-        "explanation": "evals/changelog-line/adds-one-line/fixture.sh exists as expected",
-        "withOnly": false,
-        "scored": true
+        "evidence": "schema_version: \"1.1\"\nname: adds-one-line\ndescription: Adding a changelog entry from a plain-language bug description appends exactly one Conventional-Commits-formatted line under Unreleased, without disturbing the existing entry.\ncontext:\n  scaffold_script: fixture.sh\n"
        },
        {
         "name": "fixture-shape",
@@ -150,23 +98,56 @@
          true,
          true
         ],
-        "evidence": "#!/usr/bin/env bash\nset -e\n\ncat > CHANGELOG.md <<'EOF'\n# Changelog\n\n## Unreleased\n- feat(auth): add OAuth login support\n\n## 1.0.0 - 2024-01-01\n- Initial release\nEOF\n\nmkdir -p src/cli\ncat > src/cli/flags.js <<'EOF'\nfunction parseFlags(argv) {\n  const verbose = argv.includes('--verbose');\n  const quiet = argv.includes('--quiet');\n  if (quiet) {\n    // --quiet silently wins; --verbose is dropped with no warning.\n    return { verbose: false, quiet: true };\n  }\n  return { verbose, quiet };\n}\n\nmodule.exports = { parseFlags };\nEOF\n\ngit init -q\ngit add -A\ngit -c user.name=t -c user.email=t@t commit -qm init\n"
+        "evidence": "#!/usr/bin/env bash\nset -e\n\nmkdir -p src/config\n\ncat > CHANGELOG.md <<'EOF'\n# Changelog\n\n## Unreleased\n\n- feat(auth): add configurable session timeout\n\n## 1.2.0\n\n- chore: initial public release\nEOF\n\ncat > src/config/loader.js <<'EOF'\nexport function loadConfig(raw) {\n  const scope = raw.scope === undefined ? 'default' : raw.scope;\n  return { scope };\n}\nEOF\n\ngit init -q\ngit add -A\ngit -c user.name=t -c user.email=t@t commit -qm init\n"
        },
        {
-        "name": "produced-skill-fired-grader",
+        "name": "skill-fired",
         "passed": true,
         "weight": 1,
-        "explanation": "evals/changelog-line/adds-one-line/graders/skill-fired.md exists as expected",
+        "explanation": "Skill called 1x (expected 1..∞)",
+        "withOnly": true,
+        "scored": false
+       }
+      ]
+     },
+     {
+      "score": 1,
+      "passed": true,
+      "turns": 31,
+      "costUsd": 0.43253600000000003,
+      "judgeCostUsd": 0.0022470000000000003,
+      "durationSeconds": 134,
+      "startedAt": "2026-09-18T00:32:36.013Z",
+      "error": null,
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "case-yaml-shape",
+        "passed": true,
+        "weight": 1,
+        "explanation": "judge votes: PASS PASS PASS",
         "withOnly": false,
-        "scored": true
+        "scored": true,
+        "judgeVotes": [
+         true,
+         true,
+         true
+        ],
+        "evidence": "schema_version: \"1.1\"\nname: adds-one-line\ndescription: Log a plain-language bug-fix description as one Conventional-Commits-style line under the existing \"## Unreleased\" heading in CHANGELOG.md, without disturbing the rest of the file.\ncontext:\n  scaffold_script: fixture.sh\n"
        },
        {
-        "name": "prompt-exists",
+        "name": "fixture-shape",
         "passed": true,
         "weight": 1,
-        "explanation": "evals/changelog-line/adds-one-line/prompt.md exists as expected",
+        "explanation": "judge votes: PASS PASS PASS",
         "withOnly": false,
-        "scored": true
+        "scored": true,
+        "judgeVotes": [
+         true,
+         true,
+         true
+        ],
+        "evidence": "#!/usr/bin/env bash\nset -e\n\nmkdir -p src\n\ncat > src/cli.js << 'EOF'\nfunction readStdin(input) {\n  if (!input) {\n    return '';\n  }\n  return input.trim();\n}\n\nmodule.exports = { readStdin };\nEOF\n\ncat > CHANGELOG.md << 'EOF'\n## Unreleased\n\n- chore(ci): speed up test matrix\n\n## 1.2.0 - 2026-08-01\n\n- feat(auth): add SSO login support\nEOF\n\ngit init -q\ngit add -A\ngit -c user.name=t -c user.email=t@t commit -qm init\n"
        },
        {
         "name": "skill-fired",
@@ -181,24 +162,16 @@
     ],
     "without": [
      {
-      "score": 0.6666666666666666,
+      "score": 0,
       "passed": false,
-      "turns": 18,
-      "costUsd": 0.24633220000000003,
-      "judgeCostUsd": 0.002547000000000001,
-      "durationSeconds": 94,
-      "startedAt": "2026-09-17T21:09:27.929Z",
+      "turns": 22,
+      "costUsd": 0.20473519999999998,
+      "judgeCostUsd": 0.0022769999999999978,
+      "durationSeconds": 77,
+      "startedAt": "2026-09-18T00:34:49.583Z",
       "error": null,
       "skippedPaidGraders": false,
       "graders": [
-       {
-        "name": "case-yaml-exists",
-        "passed": true,
-        "weight": 1,
-        "explanation": "evals/changelog-line/adds-one-line/case.yaml exists as expected",
-        "withOnly": false,
-        "scored": true
-       },
        {
         "name": "case-yaml-shape",
         "passed": false,
@@ -211,15 +184,7 @@
          false,
          false
         ],
-        "evidence": "name: adds-one-line\nskill: changelog-line\ndescription: >-\n  A plain-language description of a single bug fix should result in exactly\n  one correctly formatted line appended under the existing \"## Unreleased\"\n  heading, leaving the rest of CHANGELOG.md untouched.\nfixture: fixture.sh\nprompt: prompt.md\ngraders:\n  - graders/skill-fired.md\n  - graders/changelog-entry.md\n"
-       },
-       {
-        "name": "fixture-exists",
-        "passed": true,
-        "weight": 1,
-        "explanation": "evals/changelog-line/adds-one-line/fixture.sh exists as expected",
-        "withOnly": false,
-        "scored": true
+        "evidence": "name: adds-one-line\nskill: changelog-line\ndescription: >\n  User describes a single bug fix in plain language and asks for a changelog\n  entry. The skill should fire, ask no clarifying question (the fix type is\n  obvious), and append exactly one Conventional-Commits-style line under the\n  existing \"## Unreleased\" heading without disturbing the rest of the file.\nprompt: prompt.md\nfixture: fixture.sh\ngraders:\n  - graders/skill-fired.md\n  - graders/changelog-line-format.md\n"
        },
        {
         "name": "fixture-shape",
@@ -233,23 +198,48 @@
          false,
          false
         ],
-        "evidence": "#!/usr/bin/env bash\n# Sets up the working directory for the \"adds-one-line\" case: a CHANGELOG.md\n# that already has an \"## Unreleased\" section with one entry, plus a past\n# release, so the grader can confirm the skill appends without disturbing\n# anything else.\nset -euo pipefail\n\ncat > CHANGELOG.md <<'EOF'\n# Changelog\n\n## Unreleased\n\n- feat(auth): add OAuth login support\n\n## 1.2.0 - 2026-08-01\n\n- fix(api): correct pagination offset bug\nEOF\n"
+        "evidence": "#!/usr/bin/env bash\n# Sets up a repo with an existing CHANGELOG.md before the prompt is sent, so\n# the case exercises \"append to an existing Unreleased section\" rather than\n# \"create the file from scratch\".\nset -euo pipefail\n\ncat > CHANGELOG.md <<'EOF'\n## Unreleased\n\n- feat(reports): add CSV export button\n\n## 1.2.0 - 2026-08-01\n\n- fix(auth): stop session tokens from leaking into logs\nEOF\n"
+       }
+      ]
+     },
+     {
+      "score": 0,
+      "passed": false,
+      "turns": 16,
+      "costUsd": 0.2555024000000001,
+      "judgeCostUsd": 0.002380000000000002,
+      "durationSeconds": 80,
+      "startedAt": "2026-09-18T00:36:06.531Z",
+      "error": null,
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "case-yaml-shape",
+        "passed": false,
+        "weight": 1,
+        "explanation": "judge votes: FAIL FAIL FAIL",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         false,
+         false,
+         false
+        ],
+        "evidence": "name: adds-one-line\nskill: changelog-line\ndescription: >\n  Describing a single bug fix in plain language should result in exactly one new line appended\n  under \"## Unreleased\" in CHANGELOG.md, formatted as `- <type>(<scope>): <summary>`.\nprompt: prompt.md\nfixture: fixture.sh\ngraders:\n  - graders/skill-fired.md\n  - graders/changelog-line-format.md\n"
        },
        {
-        "name": "produced-skill-fired-grader",
-        "passed": true,
+        "name": "fixture-shape",
+        "passed": false,
         "weight": 1,
-        "explanation": "evals/changelog-line/adds-one-line/graders/skill-fired.md exists as expected",
+        "explanation": "judge votes: FAIL FAIL FAIL",
         "withOnly": false,
-        "scored": true
-       },
-       {
-        "name": "prompt-exists",
-        "passed": true,
-        "weight": 1,
-        "explanation": "evals/changelog-line/adds-one-line/prompt.md exists as expected",
-        "withOnly": false,
-        "scored": true
+        "scored": true,
+        "judgeVotes": [
+         false,
+         false,
+         false
+        ],
+        "evidence": "#!/usr/bin/env bash\nset -euo pipefail\n\ncat > CHANGELOG.md <<'EOF'\n# Changelog\n\n## Unreleased\n\n- fix(auth): reject expired refresh tokens instead of silently renewing them\n\n## v1.2.0 - 2026-08-01\n\n- feat(api): add pagination to the /events endpoint\nEOF\n"
        }
       ]
      }
@@ -258,9 +248,9 @@
    "aggregates": {
     "score": 1,
     "passRate": 1,
-    "scoreWithout": 0.6666666666666666,
+    "scoreWithout": 0,
     "passRateWithout": 0,
-    "delta": 0.33333333333333337
+    "delta": 1
    }
   }
  ],
@@ -269,6 +259,6 @@
   "casesPassed": 1,
   "overallScore": 1,
   "overallPassRate": 1,
-  "meanDelta": 0.33333333333333337
+  "meanDelta": 1
  }
 }

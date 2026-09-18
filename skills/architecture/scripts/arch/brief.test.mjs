@@ -178,3 +178,12 @@ test('section 3: the deployment recipe offers the rendered route (a deployment b
   assert.match(md, /deployment view deployment/);
   assert.match(md, /architecture\/deployment\.md/);
 });
+
+test('section 5 leads with overview.md for every kind: it is the written document the house style requires of every archetype', () => {
+  for (const kinds of [['service'], ['iac'], ['cli']]) {
+    const md = briefMd({ ...BASE, kinds: { kinds, evidence: [], ambiguous: false } });
+    const section = md.slice(md.indexOf('## 5.'), md.indexOf('## 6.'));
+    const rows = section.split('\n').filter(l => /^\| [a-z]/.test(l) && !/^\| view \|/.test(l));
+    assert.match(rows[0], /^\| overview \| architecture\/overview\.md \| prose/, `${kinds}: first row`);
+  }
+});

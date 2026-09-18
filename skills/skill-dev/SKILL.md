@@ -7,7 +7,7 @@ license: MIT
 # Skill dev
 
 Run the nine steps below in order. Each one exists because skipping it has cost a paid eval run;
-`references/rationale.md` says why, step by step. Read the repository's own CLAUDE.md first: it
+[references/rationale.md](references/rationale.md) says why, step by step. Read the repository's own CLAUDE.md first: it
 names the gate command, the line caps and the version rule that the steps below refer to.
 
 ## 1. Classify the change
@@ -26,12 +26,19 @@ its `description` and fix any drift from what the skill now does.
   `compatibility` note). Put no harness-specific fields (tool allowlists) in a portable skill;
   scope those in the eval case settings instead.
 
-## 3. Write the body
+## 3. Write the body as an instruction sheet
 
-- Write imperatives: "run", "write", "classify". Cut prose about what an agent "should" do.
-- Stay under the repository's `SKILL.md` line cap (commonly 500).
-- Move detail (reference tables, file-format specs, per-framework variants) to
-  `references/*.md` and link it from the step that needs it.
+The body is what the agent reads while doing the task, so give it this shape and nothing else:
+
+1. One sentence of purpose under the H1.
+2. Numbered steps, each starting with a verb ("Run", "Pass", "Report"), in the order the work
+   happens. A step names the exact command or file it acts on.
+3. A "When not to use" section naming the cases the skill should decline.
+4. A link to `references/<topic>.md` wherever a reader might want the detail behind a step.
+
+Anything that describes rather than instructs (what a script handles, how it works, an API
+surface, a list of supported cases) goes into that `references/` file, not the body. Stay under
+the repository's `SKILL.md` line cap (commonly 500).
 
 ## 4. Add a script and its test in the same commit
 

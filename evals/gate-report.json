@@ -4,10 +4,10 @@
  "attested": true,
  "agenticRan": true,
  "bypass": null,
- "generatedAt": "2026-09-18T00:01:02.491Z",
- "commit": "ed79f993e05b05a990bf4b3d40c4e07f085d76ab",
+ "generatedAt": "2026-09-18T01:44:13.577Z",
+ "commit": "941d5fa880703e14694bc9247e9f990269e0ab88",
  "claudeVersion": "2.1.275",
- "pluginVersion": "0.2.2",
+ "pluginVersion": "0.2.3",
  "scope": {
   "skills": [
    "architecture",
@@ -83,9 +83,9 @@
     "delta": 1,
     "partial": false,
     "errors": [],
-    "turns": 69,
-    "costUsd": 1.9406484000000004,
-    "durationSeconds": 781,
+    "turns": 90,
+    "costUsd": 1.8575266,
+    "durationSeconds": 630,
     "exit": 0
    },
    {
@@ -99,9 +99,9 @@
     "delta": 1,
     "partial": false,
     "errors": [],
-    "turns": 130,
-    "costUsd": 3.2837104000000004,
-    "durationSeconds": 1061,
+    "turns": 95,
+    "costUsd": 2.5019238,
+    "durationSeconds": 804,
     "exit": 0
    },
    {
@@ -115,9 +115,9 @@
     "delta": 1,
     "partial": false,
     "errors": [],
-    "turns": 14,
-    "costUsd": 0.3622114,
-    "durationSeconds": 110,
+    "turns": 18,
+    "costUsd": 0.4354672,
+    "durationSeconds": 124,
     "exit": 0
    },
    {
@@ -127,13 +127,13 @@
     "judge": "claude-haiku-4-5",
     "evidence": "evals/attest/writes-a-case-for-changelog-line.json",
     "score": 1,
-    "scoreWithout": 0.6666666666666666,
-    "delta": 0.33333333333333337,
+    "scoreWithout": 0,
+    "delta": 1,
     "partial": false,
     "errors": [],
-    "turns": 19,
-    "costUsd": 0.5045360000000001,
-    "durationSeconds": 194,
+    "turns": 23,
+    "costUsd": 1.207515,
+    "durationSeconds": 417,
     "exit": 0
    },
    {
@@ -142,14 +142,14 @@
     "model": "claude-sonnet-5",
     "judge": "claude-haiku-4-5",
     "evidence": "evals/attest/adds-a-csv-to-table-skill.json",
-    "score": 0.8571428571428571,
-    "scoreWithout": 0.5714285714285714,
-    "delta": 0.2857142857142857,
+    "score": 0.875,
+    "scoreWithout": 0.25,
+    "delta": 0.625,
     "partial": false,
     "errors": [],
-    "turns": 32,
-    "costUsd": 0.9616765999999999,
-    "durationSeconds": 291,
+    "turns": 31,
+    "costUsd": 1.8561852,
+    "durationSeconds": 719,
     "exit": 0
    }
   ]
@@ -158,35 +158,31 @@
   "architecture": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.35883360000000003
+   "costUsd": 0.6045385000000001
   },
   "eval-authoring": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.10074820000000001
+   "costUsd": 0.19147939999999997
   },
   "skill-dev": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.09628439999999999
+   "costUsd": 0.0850606
   }
  },
  "totals": {
-  "costUsd": 7.608649,
-  "durationSeconds": 2437
+  "costUsd": 8.739696299999999,
+  "durationSeconds": 2694
  },
- "skillsDigest": "0f70ddebfd2ee39031ab1bc58c1df5ac115603fcd6ff1e48fc3e52607544fda5",
- "harnessDigest": "b735e8bf0970c46ad163f2d625063d58156540faf6b42010013e0ecc010dafce",
+ "skillsDigest": "d11a8a556e557323c2d4a72f059c9c3c02638ba169f8e62d12cee1e549fc6bcf",
+ "harnessDigest": "3b65ff8b686b82a7508fde593394cc15c66b51e01d76da2803b278b08b36ba2e",
  "reusedEvals": [
-  "document-a-terraform-repo",
-  "document-a-ts-monorepo",
-  "drift-catches-a-new-edge",
-  "writes-a-case-for-changelog-line",
-  "adds-a-csv-to-table-skill"
+  "writes-a-case-for-changelog-line"
  ],
  "skillDigests": {
-  "architecture": "428f7205c0f44507771ea04cff21cff1ff39661be82a9a70f7c845d1ee5471e7",
-  "eval-authoring": "3f008f6f358b6d781f8f12c186e9f7572534fa23822cc304605af4eafb0ddf50",
-  "skill-dev": "3f4045f24a2796b99fdc7ccd76ed9bd2a65d42026002e7ba3fd203b9cc62d517"
+  "architecture": "4fcebda3d0b20e79ae813ef8d4aca6cfd7f73f6f2288a37ef9191d45e09eb5ae",
+  "eval-authoring": "46e4ffd8526cd32f075d7916aff0c011c95948f84e088eca13e40b3cf800b336",
+  "skill-dev": "aab224282d1f05b826d1f5ef89d050b07565b311cc2bd493ae2be9336b5c77cc"
  }
 }
