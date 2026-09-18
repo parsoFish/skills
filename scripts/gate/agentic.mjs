@@ -41,6 +41,21 @@ export function attestedForSameContent(prior, skillsDigestNow, caseName) {
   return (prior.eval?.cases ?? []).some(k => k.name === caseName && k.evidence);
 }
 
+/** The last attested report to reuse evidence from. A quick gate (`--no-agentic`) rewrites the
+ * working-tree report as an unattested one, which used to erase every reuse candidate; so an
+ * unattested or unreadable tree copy defers to the committed copy at HEAD when that one is better. */
+export function loadPriorReport(root, {
+  readTree = () => { const p = join(root, 'evals', 'gate-report.json'); return existsSync(p) ? readFileSync(p, 'utf8') : null; },
+  readHead = () => { const r = spawnSync('git', ['show', 'HEAD:evals/gate-report.json'], { cwd: root, encoding: 'utf8', maxBuffer: 1 << 26 }); return r.status === 0 ? r.stdout : null; },
+} = {}) {
+  const parse = text => { if (text == null) return null; try { const j = JSON.parse(text); return j && typeof j === 'object' ? j : null; } catch { return null; } };
+  const tree = parse(readTree());
+  if (tree?.schema === 2 && tree.attested === true) return tree;
+  const head = parse(readHead());
+  if (head?.schema === 2 && head.attested === true) return head;
+  return tree ?? head ?? null;
+}
+
 /** Pure: the prior attested report covers this case for the exact content of ITS skill now in the tree,
  * regardless of what changed in other skills or of squash-merge commit times. */
 export function attestedForSameSkillContent(prior, skill, skillDigestNow, caseName) {
@@ -94,8 +109,7 @@ export async function runAgentic({ root, scope, config, args, det, sh, commit, c
   const harnessDigestNow = attest.harnessDigest(root);
   const skillDigestsNow = Object.fromEntries(scope.skills.map(s => [s, attest.skillDigest(root, s)]));
 
-  const priorPath = join(root, 'evals', 'gate-report.json');
-  const prior = existsSync(priorPath) ? JSON.parse(readFileSync(priorPath, 'utf8')) : null;
+  const prior = loadPriorReport(root);
   const cacheHit = !args.force && prior?.schema === 2 && prior.attested === true && prior.skillsDigest === skillsDigestNow && prior.harnessDigest === harnessDigestNow;
   if (cacheHit) {
     console.log(`ok  claude plugin eval — cached pass for identical content (skillsDigest ${skillsDigestNow.slice(0, 12)})`);

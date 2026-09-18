@@ -65,7 +65,7 @@ grader or its delta is structurally 0.
 
 ## claude plugin eval
 
-**Crash recovery.** If the gate died after the cases ran (a bug in the gate itself, a killed process), re-run with `node scripts/gate.mjs --all --force --reuse-evals`: a case is reused instead of re-bought when its `evals/gate-eval-<case>.json` started after the last commit touching that skill, or when the last attested report covers the case for byte-identical content of that skill (`skillDigests` in `evals/gate-report.json`, so a squash merge or a change to a different skill never re-buys it); the structural reviews run again, and the report records `reusedEvals`.
+**Crash recovery.** If the gate died after the cases ran (a bug in the gate itself, a killed process), re-run with `node scripts/gate.mjs --all --force --reuse-evals`: a case is reused instead of re-bought when its `evals/gate-eval-<case>.json` started after the last commit touching that skill, or when the last attested report covers the case for byte-identical content of that skill (`skillDigests` in `evals/gate-report.json`, so a squash merge or a change to a different skill never re-buys it); the structural reviews run again, and the report records `reusedEvals`. The prior report is the working-tree `evals/gate-report.json` when it is attested, else the committed copy at `HEAD`, so a `gate:quick` run in between never erases the reuse candidates.
 
 **What it means:** the agentic half ran but a case failed, or the harness itself failed before the
 first turn. **Why it fires, case failure:** `score < threshold`, `delta < minDelta`, `partial ===
