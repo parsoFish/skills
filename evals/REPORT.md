@@ -4,11 +4,11 @@
 | field | value |
 | --- | --- |
 | skillsDigest | `0f70ddebfd2e` |
-| commit | `5bedb9898315c0cd2615d45ae06b0b0c1c8b5d56` |
-| generatedAt | 2026-09-17T22:19:46.937Z |
-| claudeVersion | 2.1.274 |
+| commit | `ed79f993e05b05a990bf4b3d40c4e07f085d76ab` |
+| generatedAt | 2026-09-18T00:01:02.491Z |
+| claudeVersion | 2.1.275 |
 | pluginVersion | 0.2.2 |
-| total cost | $7.58 |
+| total cost | $7.61 |
 | total duration | 40.6 min |
 
 ## Deterministic steps
@@ -94,9 +94,9 @@
 
 | skill | verdict | findings | cost |
 | --- | --- | --- | --- |
-| architecture | pass | none | $0.28 |
-| eval-authoring | pass | none | $0.13 |
-| skill-dev | pass | [minor] SKILL.md references `references/rationale.md` only as backticked plain text (line 10), not as a markdown link, unlike every other skill in the repo (architecture, eval-authoring all use `[references/x.md](references/x.md)` links). Not a dead link since there's no link syntax to break, but it's inconsistent with the repo's progressive-disclosure linking convention and slightly hurts navigability. | $0.12 |
+| architecture | pass | none | $0.36 |
+| eval-authoring | pass | none | $0.10 |
+| skill-dev | pass | none | $0.10 |
 
 ## Re-run
 
@@ -115,9 +115,9 @@ setsid nohup node scripts/gate.mjs --all --force > /tmp/gate.log 2>&1 &
 ## Recent ledger
 
 ```
-| 2026-09-12 | 8a56568 | architecture+eval-authoring+skill-dev | 5 cases | $6.32 | 33.5 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |
 | 2026-09-17 | 754e010 | architecture+eval-authoring+skill-dev | 5 cases | $7.03 | 38.9 min | sonnet-5/haiku-4-5 | PASS (reused 2 eval results) |
 | 2026-09-17 | a4e229e | architecture+eval-authoring+skill-dev | 5 cases | $6.89 | 38.9 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |
 | 2026-09-17 | 0997a56 | architecture+eval-authoring+skill-dev | 5 cases | $7.00 | 38.9 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |
 | 2026-09-17 | 5bedb98 | architecture+eval-authoring+skill-dev | 5 cases | $7.58 | 40.6 min | sonnet-5/haiku-4-5 | PASS (reused 1 eval result) |
+| 2026-09-18 | ed79f99 | architecture+eval-authoring+skill-dev | 5 cases | $7.61 | 40.6 min | sonnet-5/haiku-4-5 | PASS (reused 5 eval results) |
 ```
