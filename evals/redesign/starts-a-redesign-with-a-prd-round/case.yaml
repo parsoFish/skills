@@ -1,5 +1,5 @@
 schema_version: "1.1"
 name: starts-a-redesign-with-a-prd-round
-description: Asked to rebuild an existing app from the ground up, the agent starts with a requirements-only document, sets up the workspace record files, builds a local review round, and stops to wait for the person instead of proposing a design.
+description: Asked to rebuild an existing app from the ground up, the agent sets up the workspace record files, builds a first local review round about the app's needs with no design or stack decisions, and stops to wait for the person instead of proposing a design.
 context:
   scaffold_script: fixture.sh

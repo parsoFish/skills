@@ -1,22 +1,23 @@
 ---
 type: llm
 weight: 2
-focus: { source: file, path: redesign/PRD.md }
+focus: { source: file, path: redesign/reviews/01-prd-1/index.html }
 ---
-This is the first requirements document for rebuilding "Shelf", a small reading-list app. The
-repository's README says its users are Mara, the organiser of the Thursday Book Club, who keeps
-the shared list, picks the next book and wants to see what the club has read; and the club
-members (about twelve people) who check what is being read next, suggest books and mark books as
-finished. Its open issues include duplicate "read" marks, inconsistent adding of books, an
-abandoned reading-stats feature, hardcoded paths, no view of suggested-but-not-chosen books, and
-manual backups.
+This is the HTML of the first review page for rebuilding "Shelf", a small reading-list app for a
+book club. The repository's README describes its features: adding a book (two inconsistent ways),
+the shared list and the "next up" pick, marking a book as read (with a duplicate-marks bug), an
+abandoned reading-stats feature, hardcoded paths in config.json, no view of suggested-but-not-chosen
+books, and manual backups. Its users are Mara, the club organiser, and about twelve club members.
 
-Score 1 only if ALL of these hold: (a) it states the problem or purpose and names both user
-groups (the organiser and the club members) with what each needs; (b) it has user stories, each
-with acceptance written as "done when" lines or given/when/then; (c) it has constraints and
-explicit non-goals; (d) it contains NO decision about technology, framework, programming
-language, database, hosting, architecture, module structure, API shape or screen layout (a
-sentence like "stored in JSON" or "a React front end" or "a REST API" or a wireframe description
-is a violation; plain statements of need such as "works on a phone" or "data survives a machine
-move" are fine). Score 0 if any of (a) to (c) is missing or any technology, architecture or
-screen-layout decision appears.
+Score 1 only if ALL of these hold: (a) the page is about Shelf as it exists and what its people
+need: it names at least three of the actual features above (adding a book, the list or next pick,
+marking read, the stats feature, backups, suggestions) as things to keep, rework, merge, drop or
+decide on, or as user stories or requirements about them; (b) it asks the person questions with
+options and a recommended option, or gives rows a default verdict, so the person can answer by
+touching only exceptions; (c) it contains NO decision about the new system's technology,
+framework, programming language, database, hosting, architecture, module structure, API shape or
+screen layout (a sentence like "rebuild as a React app", "store it in SQLite", "a REST API" or a
+wireframe of the new screens is a violation; plain statements of need such as "works on a phone"
+or "data survives a machine move" are fine). Score 0 if the page is an unedited template (a
+placeholder question, a placeholder drawing), if it does not refer to Shelf's actual features, or
+if any technology, architecture or screen-layout decision for the new system appears.
