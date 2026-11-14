@@ -20,7 +20,8 @@ its `description` and fix any drift from what the skill now does.
 
 - Set `name` to the folder name, exactly.
 - Write `description` in the third person: what the skill does, then the phrases that trigger it
-  ("Use when the user asks to ..."). Name concrete triggers a user would type.
+  ("Use when the user asks to ..."). Name concrete triggers a user would type. Do not list what
+  the script handles or copes with (quoting, edge cases, formats); that is reference material.
 - Never put `<` or `>` in frontmatter.
 - Keep only `name`, `description` and fields the skill truly needs (`license`, a short
   `compatibility` note). Put no harness-specific fields (tool allowlists) in a portable skill;
@@ -32,13 +33,15 @@ The body is what the agent reads while doing the task, so give it this shape and
 
 1. One sentence of purpose under the H1.
 2. Numbered steps, each starting with a verb ("Run", "Pass", "Report"), in the order the work
-   happens. A step names the exact command or file it acts on.
+   happens. A step names the exact command or file it acts on; a placeholder in a command is
+   written as `path/to/input.csv`, never in angle brackets.
 3. A "When not to use" section naming the cases the skill should decline.
 4. A link to `references/<topic>.md` wherever a reader might want the detail behind a step.
 
 Anything that describes rather than instructs (what a script handles, how it works, an API
-surface, a list of supported cases) goes into that `references/` file, not the body. Stay under
-the repository's `SKILL.md` line cap (commonly 500).
+surface, a list of supported cases) goes into that `references/` file, not the body, not a step,
+not the description. A step says what to run and what to do with the result; it never says what
+the script copes with or escapes. Stay under the repository's `SKILL.md` line cap (commonly 500).
 
 ## 4. Add a script and its test in the same commit
 
@@ -74,6 +77,14 @@ Fix every finding; there is no cheap fix once an eval run has been paid for.
 - Work on a branch; never commit to a protected main branch.
 - Commit the gate's attestation alongside the change; never hand-edit it.
 - Open the PR with the gate's own report as the body when the repository supports it.
+
+## When not to use
+
+- The change touches nothing under `skills/`: a gate script, a workflow, a document. Those follow
+  the repository's own loop without the version bump, the eval case or the agentic run.
+- The repository has no lint, eval or gate of its own. Write the skill with the general skill-writing
+  guidance instead; steps 5 to 7 and 9 have nothing to run against.
+- The task is to use a skill, not to change one. Invoke that skill.
 
 ## Before declaring the change done
 

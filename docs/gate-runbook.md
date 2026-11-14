@@ -35,14 +35,16 @@ re-run. A script without a passing sibling test never ships.
 
 ## plugin validate --strict
 
-**What it means:** `claude plugin validate . --strict` failed. **Why it fires:** `plugin.json` or
-the marketplace entry is malformed, or their versions disagree (this is the check that catches a
-missed version bump on the manifest side). It validates **manifests only** — it does not read
-`SKILL.md` frontmatter at all; `npm run lint` is what catches a broken skill description. **Fix:**
-the CLI names the exact field and file. If it's a version mismatch, `node scripts/release.mjs bump
-<level>` sets both manifests together. Confirm afterwards that the command targets the marketplace
-manifest, not the plugin root: `claude plugin validate . --strict` should print "Validating
-marketplace manifest…", not the "CLAUDE.md at the plugin root is not loaded" warning.
+**What it means:** `claude plugin validate .claude-plugin/marketplace.json --strict` failed. **Why it
+fires:** the marketplace entry is malformed, or its version disagrees with `plugin.json` (this is the
+check that catches a missed version bump on the manifest side). It validates **manifests only** — it
+does not read `SKILL.md` frontmatter at all; `npm run lint` is what catches a broken skill
+description. **Fix:** the CLI names the exact field and file. If it's a version mismatch, `node
+scripts/release.mjs bump <level>` sets both manifests together. The command targets the marketplace
+manifest on purpose: since Claude Code 2.1.3xx, validating the plugin root (`.`) also runs the
+plugin-directory checks, which warn that the root `CLAUDE.md` is not loaded as context, and
+`--strict` turns that warning into a failure on every commit. The output should start "Validating
+marketplace manifest…".
 
 ## skill-creator quick_validate
 

@@ -4,14 +4,15 @@
  "attested": true,
  "agenticRan": true,
  "bypass": null,
- "generatedAt": "2026-09-18T01:44:13.577Z",
- "commit": "941d5fa880703e14694bc9247e9f990269e0ab88",
- "claudeVersion": "2.1.275",
- "pluginVersion": "0.2.3",
+ "generatedAt": "2026-11-14T14:22:52.529Z",
+ "commit": "14381dc836c5b2b8bedf00b78a54dd6752c177c7",
+ "claudeVersion": "2.1.269",
+ "pluginVersion": "0.2.4",
  "scope": {
   "skills": [
    "architecture",
    "eval-authoring",
+   "redesign",
    "skill-dev"
   ],
   "harness": true
@@ -19,6 +20,7 @@
  "changed": [
   "architecture",
   "eval-authoring",
+  "redesign",
   "skill-dev"
  ],
  "steps": [
@@ -58,6 +60,16 @@
    "detail": ""
   },
   {
+   "name": "skill-creator quick_validate redesign",
+   "ok": true,
+   "detail": "Skill is valid!"
+  },
+  {
+   "name": "eval case with Skill grader redesign",
+   "ok": true,
+   "detail": ""
+  },
+  {
    "name": "skill-creator quick_validate skill-dev",
    "ok": true,
    "detail": "Skill is valid!"
@@ -83,9 +95,9 @@
     "delta": 1,
     "partial": false,
     "errors": [],
-    "turns": 90,
-    "costUsd": 1.8575266,
-    "durationSeconds": 630,
+    "turns": 79,
+    "costUsd": 1.8775162000000005,
+    "durationSeconds": 622,
     "exit": 0
    },
    {
@@ -115,8 +127,8 @@
     "delta": 1,
     "partial": false,
     "errors": [],
-    "turns": 18,
-    "costUsd": 0.4354672,
+    "turns": 14,
+    "costUsd": 0.404062,
     "durationSeconds": 124,
     "exit": 0
    },
@@ -131,9 +143,25 @@
     "delta": 1,
     "partial": false,
     "errors": [],
-    "turns": 23,
-    "costUsd": 1.207515,
-    "durationSeconds": 417,
+    "turns": 24,
+    "costUsd": 1.1865546,
+    "durationSeconds": 460,
+    "exit": 0
+   },
+   {
+    "name": "starts-a-redesign-with-a-prd-round",
+    "skill": "redesign",
+    "model": "claude-sonnet-5",
+    "judge": "claude-haiku-4-5",
+    "evidence": "evals/attest/starts-a-redesign-with-a-prd-round.json",
+    "score": 0.8571428571428572,
+    "scoreWithout": 0,
+    "delta": 0.8571428571428572,
+    "partial": false,
+    "errors": [],
+    "turns": 37,
+    "costUsd": 1.4857401999999997,
+    "durationSeconds": 469,
     "exit": 0
    },
    {
@@ -142,14 +170,14 @@
     "model": "claude-sonnet-5",
     "judge": "claude-haiku-4-5",
     "evidence": "evals/attest/adds-a-csv-to-table-skill.json",
-    "score": 0.875,
-    "scoreWithout": 0.25,
-    "delta": 0.625,
+    "score": 1,
+    "scoreWithout": 0.4,
+    "delta": 0.6,
     "partial": false,
     "errors": [],
-    "turns": 31,
-    "costUsd": 1.8561852,
-    "durationSeconds": 719,
+    "turns": 29,
+    "costUsd": 1.9150128000000004,
+    "durationSeconds": 651,
     "exit": 0
    }
   ]
@@ -158,31 +186,50 @@
   "architecture": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.6045385000000001
+   "costUsd": 0.3501702
   },
   "eval-authoring": {
    "verdict": "pass",
    "findings": [],
-   "costUsd": 0.19147939999999997
+   "costUsd": 0.11914900000000002
+  },
+  "redesign": {
+   "verdict": "pass",
+   "findings": [],
+   "costUsd": 0.13921139999999999
   },
   "skill-dev": {
    "verdict": "pass",
-   "findings": [],
-   "costUsd": 0.0850606
+   "findings": [
+    {
+     "severity": "minor",
+     "finding": "skills/skill-dev has no scripts/ or assets/ dirs — expected, since this is a meta-skill about editing other skills' SKILL.md/body, not a tool-driven skill; not a defect."
+    },
+    {
+     "severity": "minor",
+     "finding": "Step 5 and the 'When not to use' section depend on a sibling skill (eval-authoring) and on the host repo having a lint/eval/gate; this is explicitly guarded by a 'When not to use' clause, so it degrades gracefully rather than breaking, but it does mean this skill is most useful inside a repo shaped like this one."
+    }
+   ],
+   "costUsd": 0.1101752
   }
  },
  "totals": {
-  "costUsd": 8.739696299999999,
-  "durationSeconds": 2694
+  "costUsd": 10.089515400000002,
+  "durationSeconds": 3130
  },
- "skillsDigest": "d11a8a556e557323c2d4a72f059c9c3c02638ba169f8e62d12cee1e549fc6bcf",
- "harnessDigest": "3b65ff8b686b82a7508fde593394cc15c66b51e01d76da2803b278b08b36ba2e",
+ "skillsDigest": "031a58662515d0acc3e3cccb3d53bc2a7ac0f97806984e7877c0deec8dfebaa5",
+ "harnessDigest": "bf8f57565fded629c96d26eb8beb8c8c3889b6e3953ca2e73ba25ed38536dc31",
  "reusedEvals": [
-  "writes-a-case-for-changelog-line"
+  "document-a-terraform-repo",
+  "document-a-ts-monorepo",
+  "drift-catches-a-new-edge",
+  "writes-a-case-for-changelog-line",
+  "starts-a-redesign-with-a-prd-round"
  ],
  "skillDigests": {
   "architecture": "4fcebda3d0b20e79ae813ef8d4aca6cfd7f73f6f2288a37ef9191d45e09eb5ae",
   "eval-authoring": "46e4ffd8526cd32f075d7916aff0c011c95948f84e088eca13e40b3cf800b336",
-  "skill-dev": "aab224282d1f05b826d1f5ef89d050b07565b311cc2bd493ae2be9336b5c77cc"
+  "redesign": "2ae222113c880d0e60b9ac007c1b9a12184df07239cacff8da18cb2ac13eef1e",
+  "skill-dev": "2130054952e3bf1c976ec9f68a076b3cb1f609ba8f2bd256bba2cb5800153f59"
  }
 }

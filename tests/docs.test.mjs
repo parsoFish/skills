@@ -102,5 +102,5 @@ test('CLAUDE.md stays at or under 120 lines', () => {
 
 test('npm run validate targets the marketplace manifest, not the plugin root', () => {
   const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
-  assert.ok(pkg.scripts?.validate?.includes('plugin validate .'), '"validate" script should run `claude plugin validate .`');
+  assert.ok(pkg.scripts?.validate?.includes('plugin validate .claude-plugin/marketplace.json'), '"validate" script should run `claude plugin validate .claude-plugin/marketplace.json`');
 });

@@ -31,7 +31,9 @@ export function runDeterministicChecks({ root, scope, sh }) {
   r = sh('npm', ['test', '--silent']);
   step('tests', r.status === 0, r.status ? r.out.split('\n').filter(l => /^not ok|# fail/.test(l)).join(' | ') : '');
 
-  r = sh('claude', ['plugin', 'validate', '.', '--strict']);
+  // The marketplace manifest, not the plugin root: since Claude Code 2.1.3xx validating the root also
+  // runs plugin-directory checks that warn about the root CLAUDE.md, which --strict turns into a failure.
+  r = sh('claude', ['plugin', 'validate', '.claude-plugin/marketplace.json', '--strict']);
   step('plugin validate --strict', r.status === 0, r.out.trim().split('\n').pop());
 
   const qv = locateQuickValidate();

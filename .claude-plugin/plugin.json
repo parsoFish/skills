@@ -1,7 +1,7 @@
 {
   "name": "parso-skills",
-  "version": "0.2.3",
-  "description": "David Parsonson's personal skills: architecture (design + current-state docs kit), more to come",
+  "version": "0.2.4",
+  "description": "David Parsonson's personal skills: architecture (design + current-state docs kit), redesign (staged redesign of an existing app with local review pages), skill-dev, eval-authoring",
   "author": {
     "name": "David Parsonson"
   },
