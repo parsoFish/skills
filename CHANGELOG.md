@@ -3,6 +3,7 @@
 All notable changes to this repo. Conventional commits drive entries; one line per skill change.
 
 ## Unreleased
+- feat(redesign): new skill — plans the redesign of an existing application in five reviewed stages (PRD; architecture then specs; wireframes; mocked MVP; build plan and hand-off packet), each round ending at a local review page; its kit scaffolds, builds, serves and checks the pages, saves the person's answers on Finish, and records decisions. Refined from its first end-to-end use: pages open on a picture and the question, lock pages are a diff, settled asks are never re-asked, Finish releases the wait, away mode and standing word are named, and the hand-off is a defined deliverable (#26).
 
 ## 0.2.3 — 2026-09-18
 - fix(architecture): the stage-2 brief's required-views section leads with `overview.md` for every kind; stage 2 writes only what that section lists, so the overview was written by habit, and two of three runs on identical content skipped it.
