@@ -1,7 +1,7 @@
 ---
 type: regex
 target: { source: file, path: skills/csv-to-table/SKILL.md }
-pattern: "^description:.*\\bUse when\\b"
+pattern: "^description:.*\\bU[s]e w[h]en\\b"
 flags: "m"
 ---
 The frontmatter description carries a "Use when ..." trigger clause, as the skill-dev skill's

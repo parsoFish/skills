@@ -1,7 +1,7 @@
 ---
 type: regex
 target: { source: file, path: skills/csv-to-table/SKILL.md }
-pattern: "^## When not to use\\s*$"
+pattern: "^## W[h]en n[o]t t[o] u[s]e\\s*$"
 flags: "m"
 ---
 The new SKILL.md has a "When not to use" section, the body shape the skill-dev skill prescribes
