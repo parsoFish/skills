@@ -75,6 +75,14 @@ Fix every finding; there is no cheap fix once an eval run has been paid for.
 - Commit the gate's attestation alongside the change; never hand-edit it.
 - Open the PR with the gate's own report as the body when the repository supports it.
 
+## When not to use
+
+- The change touches nothing under `skills/`: a gate script, a workflow, a document. Those follow
+  the repository's own loop without the version bump, the eval case or the agentic run.
+- The repository has no lint, eval or gate of its own. Write the skill with the general skill-writing
+  guidance instead; steps 5 to 7 and 9 have nothing to run against.
+- The task is to use a skill, not to change one. Invoke that skill.
+
 ## Before declaring the change done
 
 - [ ] `name` equals the folder; `description` is third person and names a trigger; no `<`/`>`
