@@ -39,7 +39,7 @@ Node 22, no runtime dependencies, MIT. `AGENTS.md` points here; there is no seco
 
     lint                               frontmatter, caps, links, forbidden terms, eval coverage
     npm test
-    claude plugin validate . --strict  manifests ONLY; it does not read SKILL.md frontmatter
+    claude plugin validate .claude-plugin/marketplace.json --strict   manifests ONLY, never the root
     skill-creator quick_validate.py    per changed skill
     claude plugin eval                 one case at a time, with-without ablation
     headless structural review         JSON-schema verdict, read-only tools

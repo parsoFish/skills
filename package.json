@@ -1,6 +1,6 @@
 {
   "name": "@parsofish/skills",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Personal collection of Claude Code skills, packaged as a plugin marketplace",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
   "scripts": {
     "lint": "node scripts/lint-skills.mjs",
     "test": "node --test \"tests/**/*.test.mjs\" \"skills/*/scripts/**/*.test.mjs\"",
-    "validate": "claude plugin validate . --strict",
+    "validate": "claude plugin validate .claude-plugin/marketplace.json --strict",
     "check": "npm run lint && npm test && npm run validate",
     "gate": "node scripts/gate.mjs",
     "gate:quick": "node scripts/gate.mjs --no-agentic",
