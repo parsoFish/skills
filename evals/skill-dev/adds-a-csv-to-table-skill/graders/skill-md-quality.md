@@ -8,7 +8,8 @@ criteria hold; quote the number of any criterion that fails.
 1. Frontmatter `name` is exactly `csv-to-table`.
 2. Frontmatter `description` is third person and names a concrete trigger a user would type
    (converting a CSV, producing a markdown table, or similar).
-3. The frontmatter contains no `<` or `>` characters.
+3. The frontmatter (the block between the two `---` lines) contains no `<` or `>` characters.
+   Angle brackets in the body, such as a placeholder in a command, do not fail this criterion.
 4. The body is an instruction sheet, judged at the section level: it has (a) at most two
    sentences of prose before its first list, (b) a numbered list of steps in which every item
    tells the agent what to do (an imperative such as "Run ...", or a condition followed by one

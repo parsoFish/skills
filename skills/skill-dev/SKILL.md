@@ -33,7 +33,8 @@ The body is what the agent reads while doing the task, so give it this shape and
 
 1. One sentence of purpose under the H1.
 2. Numbered steps, each starting with a verb ("Run", "Pass", "Report"), in the order the work
-   happens. A step names the exact command or file it acts on.
+   happens. A step names the exact command or file it acts on; a placeholder in a command is
+   written as `path/to/input.csv`, never in angle brackets.
 3. A "When not to use" section naming the cases the skill should decline.
 4. A link to `references/<topic>.md` wherever a reader might want the detail behind a step.
 
