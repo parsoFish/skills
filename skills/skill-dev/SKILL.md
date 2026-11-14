@@ -20,7 +20,8 @@ its `description` and fix any drift from what the skill now does.
 
 - Set `name` to the folder name, exactly.
 - Write `description` in the third person: what the skill does, then the phrases that trigger it
-  ("Use when the user asks to ..."). Name concrete triggers a user would type.
+  ("Use when the user asks to ..."). Name concrete triggers a user would type. Do not list what
+  the script handles or copes with (quoting, edge cases, formats); that is reference material.
 - Never put `<` or `>` in frontmatter.
 - Keep only `name`, `description` and fields the skill truly needs (`license`, a short
   `compatibility` note). Put no harness-specific fields (tool allowlists) in a portable skill;
@@ -37,8 +38,9 @@ The body is what the agent reads while doing the task, so give it this shape and
 4. A link to `references/<topic>.md` wherever a reader might want the detail behind a step.
 
 Anything that describes rather than instructs (what a script handles, how it works, an API
-surface, a list of supported cases) goes into that `references/` file, not the body. Stay under
-the repository's `SKILL.md` line cap (commonly 500).
+surface, a list of supported cases) goes into that `references/` file, not the body, not a step,
+not the description. A step says what to run and what to do with the result; it never says what
+the script copes with or escapes. Stay under the repository's `SKILL.md` line cap (commonly 500).
 
 ## 4. Add a script and its test in the same commit
 
